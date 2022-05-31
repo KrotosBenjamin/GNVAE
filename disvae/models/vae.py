@@ -9,7 +9,8 @@ from disvae.utils.initialization import weights_init
 from .encoders import get_encoder
 from .decoders import get_decoder
 
-MODELS = ["Burgess"]
+MODELS = ["Burgess", "Fullyconnected1", "Fullyconnected2", "Fullyconnected3",
+          "Fullyconnected4", "Fullyconnected5"]
 
 
 def init_specific_model(model_type, img_size, latent_dim):
@@ -38,7 +39,7 @@ class VAE(nn.Module):
         """
         super(VAE, self).__init__()
 
-        if list(img_size[1:]) not in [[32, 32], [64, 64]]:
+        if list(img_size[1:]) not in [[32, 32], [64, 64], [20, 20], [152, 152]]:
             raise RuntimeError("{} sized images not supported. Only (None, 32, 32) and (None, 64, 64) supported. Build your own architecture or reshape images!".format(img_size))
 
         self.latent_dim = latent_dim
@@ -62,13 +63,20 @@ class VAE(nn.Module):
             Diagonal log variance of the normal distribution. Shape (batch_size,
             latent_dim)
         """
-        if self.training:
-            std = torch.exp(0.5 * logvar)
-            eps = torch.randn_like(std)
-            return mean + std * eps
-        else:
-            # Reconstruction mode
-            return mean
+#        if self.training:
+#            std = torch.exp(0.5 * logvar)
+#            eps = torch.randn_like(std)
+#            return mean + std * eps
+#        else:
+#            # Reconstruction mode
+#            return mean
+
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mean + std * eps
+
+        
+        
 
     def forward(self, x):
         """

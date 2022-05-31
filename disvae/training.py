@@ -50,6 +50,8 @@ class Trainer():
                  gif_visualizer=None,
                  is_progress_bar=True):
 
+        torch.autograd.set_detect_anomaly(True)
+        
         self.device = device
         self.model = model.to(self.device)
         self.loss_f = loss_f
@@ -161,6 +163,14 @@ class Trainer():
             # for losses that use multiple optimizers (e.g. Factor)
             loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
 
+        return loss.item()
+
+
+    def _train_iteration_apua(self, data, storer):
+        batch_size, channel, height, width = data.size()
+        data = data.to(self.device)
+        
+        loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
         return loss.item()
 
 

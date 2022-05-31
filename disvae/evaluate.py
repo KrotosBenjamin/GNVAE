@@ -113,8 +113,8 @@ class Evaluator:
                 # for losses that use multiple optimizers (e.g. Factor)
                 _ = self.loss_f.call_optimize(data, self.model, None, storer)
 
-            losses = {k: sum(v) / len(dataloader) for k, v in storer.items()}
-            return losses
+        losses = {k: sum(v) / len(dataloader) for k, v in storer.items()}
+        return losses
 
     def compute_metrics(self, dataloader):
         """Compute all the metrics.

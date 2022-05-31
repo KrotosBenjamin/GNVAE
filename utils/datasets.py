@@ -10,6 +10,8 @@ from skimage.io import imread
 from PIL import Image
 from tqdm import tqdm
 import numpy as np
+import pandas as pd
+from scipy.stats import zscore
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -22,7 +24,9 @@ DATASETS_DICT = {"mnist": "MNIST",
                  "fashion": "FashionMNIST",
                  "dsprites": "DSprites",
                  "celeba": "CelebA",
-                 "chairs": "Chairs"}
+                 "chairs": "Chairs",
+                 "caudategenes": "CaudateGenes"}
+
 DATASETS = list(DATASETS_DICT.keys())
 
 
@@ -63,12 +67,11 @@ def get_dataloaders(dataset, root=None, shuffle=True, pin_memory=True,
     """
     pin_memory = pin_memory and torch.cuda.is_available  # only pin if GPU available
     Dataset = get_dataset(dataset)
-    dataset = Dataset(logger=logger) if root is None else Dataset(root=root, logger=logger)
+    dataset = Dataset(logger=logger, **kwargs) if root is None else Dataset(root=root, logger=logger, **kwargs)
     return DataLoader(dataset,
                       batch_size=batch_size,
                       shuffle=shuffle,
-                      pin_memory=pin_memory,
-                      **kwargs)
+                      pin_memory=pin_memory)
 
 
 class DisentangledDataset(Dataset, abc.ABC):
@@ -382,6 +385,51 @@ class FashionMNIST(datasets.FashionMNIST):
                          ]))
 
 
+
+class CaudateGenes(DisentangledDataset):
+    """Caudate gene expression data. Features are patients, examples are genes"""
+
+    files = {"train": "None"}
+    img_size = (1, 20, 20)
+    background_color = COLOUR_BLACK
+    
+    def __init__(self, root="/", train_or_test=None, fold=None, **kwargs):
+
+        super().__init__(root, [transforms.ToTensor()], **kwargs)
+
+        data_dir = "/ceph/projects/v4_phase3_paper/analysis/gnvae/input/select_samples/prep_data_cv/_m/Fold-%s/" % fold 
+
+        dfx = pd.read_csv("%s/X_%s.csv" % (data_dir, train_or_test), index_col=0)
+        self.dfx = dfx
+
+        padding = np.product(type(self).img_size) - dfx.shape[1]
+
+        self.imgs = np.concatenate(
+            [dfx.values.astype(np.float32),
+             np.zeros((dfx.shape[0], padding), dtype=np.float32)],
+             axis =1).reshape((-1,
+                              type(self).img_size[2],
+                              type(self).img_size[1],
+                              type(self).img_size[0]))
+
+        
+    def __getitem__(self, idx):
+
+        img = self.imgs[idx] 
+        
+        img = self.transforms(img)
+
+        # no label so return 0 (note that can't return None because)
+        # dataloaders requires so
+        return img, 0
+
+    
+    def download(self):
+        """Download the dataset."""
+        pass
+
+
+        
 # HELPERS
 def preprocess(root, size=(64, 64), img_format='JPEG', center_crop=None):
     """Preprocess a folder of images.

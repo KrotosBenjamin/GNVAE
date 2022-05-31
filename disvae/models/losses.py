@@ -277,7 +277,7 @@ class FactorKLoss(BaseLoss):
             # don't backprop if evaluating
             return vae_loss
 
-        # Compute VAE gradients
+        # Run VAE optimizer
         optimizer.zero_grad()
         vae_loss.backward(retain_graph=True)
 
@@ -293,17 +293,19 @@ class FactorKLoss(BaseLoss):
         ones = torch.ones(half_batch_size, dtype=torch.long, device=self.device)
         zeros = torch.zeros_like(ones)
         d_tc_loss = 0.5 * (F.cross_entropy(d_z, zeros) + F.cross_entropy(d_z_perm, ones))
+
         # with sigmoid would be :
         # d_tc_loss = 0.5 * (self.bce(d_z.flatten(), ones) + self.bce(d_z_perm.flatten(), 1 - ones))
 
         # TO-DO: check ifshould also anneals discriminator if not becomes too good ???
         #d_tc_loss = anneal_reg * d_tc_loss
 
-        # Compute discriminator gradients
+        # Run discriminator optimizer
         self.optimizer_d.zero_grad()
         d_tc_loss.backward()
 
-        # Update at the end (since pytorch 1.5. complains if update before)
+        
+        #Update at the end (since pytorch 1.5. complains if update before)
         optimizer.step()
         self.optimizer_d.step()
 

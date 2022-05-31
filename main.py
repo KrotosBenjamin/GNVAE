@@ -53,7 +53,11 @@ def parse_arguments(args_to_parse):
                          help='Disables CUDA training, even when have one.')
     general.add_argument('-s', '--seed', type=int, default=default_config['seed'],
                          help='Random seed. Can be `None` for stochastic behavior.')
+    general.add_argument('--fold', 
+                         default=None,
+                         help='Fold number for caudate dataset.')
 
+    
     # Learning options
     training = parser.add_argument_group('Training specific options')
     training.add_argument('--checkpoint-every',
@@ -194,9 +198,18 @@ def main(args):
             args.epochs *= 2
 
         # PREPARES DATA
+
+        if args.fold is not None:
+            mykwargs = {'fold': args.fold,
+                        'train_or_test': 'train'}
+        else:
+            mykwargs = dict()
+            
         train_loader = get_dataloaders(args.dataset,
                                        batch_size=args.batch_size,
-                                       logger=logger)
+                                       logger=logger,
+                                       **mykwargs)
+        
         logger.info("Train {} with {} samples".format(args.dataset, len(train_loader.dataset)))
 
         # PREPARES MODEL
@@ -208,7 +221,8 @@ def main(args):
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
         model = model.to(device)  # make sure trainer and viz on same device
-        gif_visualizer = GifTraversalsTraining(model, args.dataset, exp_dir)
+        #gif_visualizer = GifTraversalsTraining(model, args.dataset, exp_dir)
+        gif_visualizer = None
         loss_f = get_loss_f(args.loss,
                             n_data=len(train_loader.dataset),
                             device=device,
@@ -229,11 +243,22 @@ def main(args):
     if args.is_metrics or not args.no_test:
         model = load_model(exp_dir, is_gpu=not args.no_cuda)
         metadata = load_metadata(exp_dir)
+
+
+        if args.fold is not None:
+            mykwargs = {'fold': args.fold,
+                        'train_or_test': 'test'}
+        else:
+            mykwargs = dict()
+
+        
         # TO-DO: currently uses train datatset
         test_loader = get_dataloaders(metadata["dataset"],
                                       batch_size=args.eval_batchsize,
                                       shuffle=False,
-                                      logger=logger)
+                                      logger=logger,
+                                      **mykwargs
+                                     )
         loss_f = get_loss_f(args.loss,
                             n_data=len(test_loader.dataset),
                             device=device,

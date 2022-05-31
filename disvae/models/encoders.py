@@ -32,7 +32,7 @@ class EncoderBurgess(nn.Module):
         - 2 fully connected layers (each of 256 units)
         - Latent distribution:
             - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
-
+0
         References:
             [1] Burgess, Christopher P., et al. "Understanding disentangling in
             $\beta$-VAE." arXiv preprint arXiv:1804.03599 (2018).
@@ -80,6 +80,270 @@ class EncoderBurgess(nn.Module):
         x = x.view((batch_size, -1))
         x = torch.relu(self.lin1(x))
         x = torch.relu(self.lin2(x))
+
+        # Fully connected layer for log variance and mean
+        # Log std-dev in paper (bear in mind)
+        mu_logvar = self.mu_logvar_gen(x)
+        mu, logvar = mu_logvar.view(-1, self.latent_dim, 2).unbind(-1)
+
+        return mu, logvar
+
+
+
+class EncoderFullyconnected1(nn.Module):
+    """ Fully connected encoder 1
+
+         self.latent_dim = latent_dim
+        self.img_size = img_size
+
+        Parameters
+        ----------
+        img_size : tuple of ints
+            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
+
+        latent_dim : int
+            Dimensionality of latent output.
+
+        Model Architecture (transposed for decoder)
+        ------------
+        - 2 fully connected layers (each of 256 units)
+        - Latent distribution:
+        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
+
+   """
+    
+    def __init__(self, img_size, latent_dim=128):
+
+        super(EncoderFullyconnected1, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.img_size = img_size
+        
+        dims = [128, 64, 32]
+        
+        self.lin1 = nn.Linear(np.product(img_size), dims[0])
+        self.lin2 = nn.Linear(dims[0], dims[1])
+        self.lin3 = nn.Linear(dims[1], dims[2])
+        self.mu_logvar_gen = nn.Linear(dims[2], self.latent_dim * 2)
+
+
+    def forward(self, x):
+        batch_size = x.size(0)
+
+        # Fully connected layers with ReLu activations
+        x = x.view((batch_size, -1))
+        x = torch.relu(self.lin1(x))
+        x = torch.relu(self.lin2(x))
+        x = torch.relu(self.lin3(x))
+
+        # Fully connected layer for log variance and mean
+        # Log std-dev in paper (bear in mind)
+        mu_logvar = self.mu_logvar_gen(x)
+        mu, logvar = mu_logvar.view(-1, self.latent_dim, 2).unbind(-1)
+
+        return mu, logvar
+
+
+
+    
+class EncoderFullyconnected2(nn.Module):
+    """ Fully connected encoder 2
+
+         self.latent_dim = latent_dim
+        self.img_size = img_size
+
+        Parameters
+        ----------
+        img_size : tuple of ints
+            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
+
+        latent_dim : int
+            Dimensionality of latent output.
+
+        Model Architecture (transposed for decoder)
+        ------------
+        - 2 fully connected layers (each of 256 units)
+        - Latent distribution:
+        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
+
+   """
+    
+    def __init__(self, img_size, latent_dim=128):
+
+        super(EncoderFullyconnected2, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.img_size = img_size
+        
+        dims = [4096, 1024]
+        
+        self.lin1 = nn.Linear(np.product(img_size), dims[0])
+        self.lin2 = nn.Linear(dims[0], dims[1])
+        self.mu_logvar_gen = nn.Linear(dims[1], self.latent_dim * 2)
+
+
+    def forward(self, x):
+        batch_size = x.size(0)
+
+        # Fully connected layers with ReLu activations
+        x = x.view((batch_size, -1))
+        x = torch.relu(self.lin1(x))
+        x = torch.relu(self.lin2(x))
+
+        # Fully connected layer for log variance and mean
+        # Log std-dev in paper (bear in mind)
+        mu_logvar = self.mu_logvar_gen(x)
+        mu, logvar = mu_logvar.view(-1, self.latent_dim, 2).unbind(-1)
+
+        return mu, logvar
+
+
+class EncoderFullyconnected3(nn.Module):
+    """ Fully connected encoder 3
+
+         self.latent_dim = latent_dim
+        self.img_size = img_size
+
+        Parameters
+        ----------
+        img_size : tuple of ints
+            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
+
+        latent_dim : int
+            Dimensionality of latent output.
+
+        Model Architecture (transposed for decoder)
+        ------------
+        - 2 fully connected layers (each of 256 units)
+        - Latent distribution:
+        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
+
+   """
+    
+    def __init__(self, img_size, latent_dim=128):
+
+        super(EncoderFullyconnected3, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.img_size = img_size
+        
+        dims = [1024, 1024]
+        
+        self.lin1 = nn.Linear(np.product(img_size), dims[0])
+        self.lin2 = nn.Linear(dims[0], dims[1])
+        self.mu_logvar_gen = nn.Linear(dims[1], self.latent_dim * 2)
+
+
+    def forward(self, x):
+        batch_size = x.size(0)
+
+        # Fully connected layers with ReLu activations
+        x = x.view((batch_size, -1))
+        x = torch.relu(self.lin1(x))
+        x = torch.relu(self.lin2(x))
+
+        # Fully connected layer for log variance and mean
+        # Log std-dev in paper (bear in mind)
+        mu_logvar = self.mu_logvar_gen(x)
+        mu, logvar = mu_logvar.view(-1, self.latent_dim, 2).unbind(-1)
+
+        return mu, logvar
+
+
+class EncoderFullyconnected4(nn.Module):
+    """ Fully connected encoder 4
+
+         self.latent_dim = latent_dim
+        self.img_size = img_size
+
+        Parameters
+        ----------
+        img_size : tuple of ints
+            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
+
+        latent_dim : int
+            Dimensionality of latent output.
+
+        Model Architecture (transposed for decoder)
+        ------------
+        - 2 fully connected layers (each of 256 units)
+        - Latent distribution:
+        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
+
+   """
+    
+    def __init__(self, img_size, latent_dim=128):
+
+        super(EncoderFullyconnected4, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.img_size = img_size
+        
+        dims = [128, 32]
+        
+        self.lin1 = nn.Linear(np.product(img_size), dims[0])
+        self.lin2 = nn.Linear(dims[0], dims[1])
+        self.mu_logvar_gen = nn.Linear(dims[1], self.latent_dim * 2)
+
+
+    def forward(self, x):
+        batch_size = x.size(0)
+
+        # Fully connected layers with ReLu activations
+        x = x.view((batch_size, -1))
+        x = torch.relu(self.lin1(x))
+        x = torch.relu(self.lin2(x))
+
+        # Fully connected layer for log variance and mean
+        # Log std-dev in paper (bear in mind)
+        mu_logvar = self.mu_logvar_gen(x)
+        mu, logvar = mu_logvar.view(-1, self.latent_dim, 2).unbind(-1)
+
+        return mu, logvar
+
+
+    
+class EncoderFullyconnected5(nn.Module):
+    """ Fully connected encoder 5
+
+         self.latent_dim = latent_dim
+        self.img_size = img_size
+
+        Parameters
+        ----------
+        img_size : tuple of ints
+            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
+
+        latent_dim : int
+            Dimensionality of latent output.
+
+        Model Architecture (transposed for decoder)
+        ------------
+        - 2 fully connected layers (each of 256 units)
+        - Latent distribution:
+        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
+
+   """
+    
+    def __init__(self, img_size, latent_dim=128):
+
+        super(EncoderFullyconnected5, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.img_size = img_size
+        
+        dims = [128]
+        
+        self.lin1 = nn.Linear(np.product(img_size), dims[0])
+        self.mu_logvar_gen = nn.Linear(dims[0], self.latent_dim * 2)
+
+
+    def forward(self, x):
+        batch_size = x.size(0)
+
+        # Fully connected layers with ReLu activations
+        x = x.view((batch_size, -1))
+        x = torch.relu(self.lin1(x))
 
         # Fully connected layer for log variance and mean
         # Log std-dev in paper (bear in mind)
