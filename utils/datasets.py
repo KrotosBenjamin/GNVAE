@@ -25,7 +25,7 @@ DATASETS_DICT = {"mnist": "MNIST",
                  "dsprites": "DSprites",
                  "celeba": "CelebA",
                  "chairs": "Chairs",
-                 "caudategenes": "CaudateGenes"}
+                 "geneexpression": "GeneExpression"}
 
 DATASETS = list(DATASETS_DICT.keys())
 
@@ -386,8 +386,8 @@ class FashionMNIST(datasets.FashionMNIST):
 
 
 
-class CaudateGenes(DisentangledDataset):
-    """Caudate gene expression data. Features are patients, examples are genes"""
+class GeneExpression(DisentangledDataset):
+    """Gene expression data. Features are samples, examples are genes"""
 
     files = {"train": "None"}
     img_size = (1, 20, 20)
