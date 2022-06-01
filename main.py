@@ -168,6 +168,11 @@ def parse_arguments(args_to_parse):
 
     if args.gene_expression_filename is None and args.dataset == 'geneexpression':
         raise Exception("error: a file name must be specified for gene expression datasets")
+
+    # To make args from command line override args from config file, we set the defaults to be the args read so far,
+    # then we call parse_args again with the new defaults.
+    parser.set_defaults(**vars(args))
+    args = parser.parse_args(args_to_parse)
             
     return args
 
