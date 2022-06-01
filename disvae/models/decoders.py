@@ -310,6 +310,9 @@ class DecoderFullyconnected5(nn.Module):
         x = torch.relu(self.lin0(z))
         #x = torch.sigmoid(self.lin2(x)) # dropping the sigmoid
         x = self.lin1(x)
-        x = x.view(batch_size, *self.img_size)
+        #x = x.view(batch_size, *self.img_size)
+        x = x.reshape((batch_size, *self.img_size))
 
+#       print(x.shape)
+#        exit(0)
         return x

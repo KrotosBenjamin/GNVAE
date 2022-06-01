@@ -390,37 +390,43 @@ class GeneExpression(DisentangledDataset):
     """Gene expression data. Features are samples, examples are genes"""
 
     files = {"train": "None"}
-    img_size = (1, 20, 20)
+    #img_size = (1, 20, 20)
     background_color = COLOUR_BLACK
     
-    def __init__(self, root="/", train_or_test=None, fold=None, **kwargs):
+    def __init__(self, root="/", gene_expression_filename=None, **kwargs):
 
-        super().__init__(root, [transforms.ToTensor()], **kwargs)
+        super().__init__(root, [], **kwargs)
 
-        data_dir = "/ceph/projects/v4_phase3_paper/analysis/gnvae/input/select_samples/prep_data_cv/_m/Fold-%s/" % fold 
+        self.gene_expression_filename = gene_expression_filename
 
-        dfx = pd.read_csv("%s/X_%s.csv" % (data_dir, train_or_test), index_col=0)
+        dfx = pd.read_csv(self.gene_expression_filename, index_col=0)
         self.dfx = dfx
 
-        padding = np.product(type(self).img_size) - dfx.shape[1]
+        self.img_size = (1, 1, dfx.shape[1])
+        
 
+        padding = np.product(self.img_size) - dfx.shape[1]
+
+## PAREI AQUI
+##apua@qvm8:/ceph/users/apua/projects/gnvae/test/_o_m$ python ../../code/_h/disentangling-vae/main.py myname -x factor_geneexpression -m Fullyconnected5 --dataset geneexpression --gene-expression-filename /ceph/projects/v4_phase3_paper/analysis/gnvae/input/select_samples/prep_data_cv/_m/Fold-alldata/X_train.csv
+##
+##
         self.imgs = np.concatenate(
             [dfx.values.astype(np.float32),
              np.zeros((dfx.shape[0], padding), dtype=np.float32)],
              axis =1).reshape((-1,
-                              type(self).img_size[2],
-                              type(self).img_size[1],
-                              type(self).img_size[0]))
+                               *self.img_size))
 
         
     def __getitem__(self, idx):
 
-        img = self.imgs[idx] 
+        img = torch.from_numpy(self.imgs[idx])
         
-        img = self.transforms(img)
+        #img = self.transforms(img)
 
         # no label so return 0 (note that can't return None because)
         # dataloaders requires so
+
         return img, 0
 
     

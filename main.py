@@ -65,6 +65,9 @@ def parse_arguments(args_to_parse):
                           help='Save a checkpoint of the trained model every n epoch.')
     training.add_argument('-d', '--dataset', help="Path to training data.",
                           default=default_config['dataset'], choices=DATASETS)
+
+    training.add_argument('--gene-expression-filename', help="TSV file with gene expression values. Genes are rows, samples are columns.", default=None)
+    
     training.add_argument('-x', '--experiment',
                           default=default_config['experiment'], choices=EXPERIMENTS,
                           help='Predefined experiments to run. If not `custom` this will overwrite some other arguments.')
@@ -163,6 +166,9 @@ def parse_arguments(args_to_parse):
             if args.experiment in ADDITIONAL_EXP:
                 raise e  # only reraise if didn't use common section
 
+    if args.gene_expression_filename is None and args.dataset == 'geneexpression':
+        raise Exception("error: a file name must be specified for gene expression datasets")
+            
     return args
 
 
@@ -199,9 +205,9 @@ def main(args):
 
         # PREPARES DATA
 
-        if args.fold is not None:
-            mykwargs = {'fold': args.fold,
-                        'train_or_test': 'train'}
+        if args.gene_expression_filename is not None:
+            mykwargs = {'gene_expression_filename':
+                        args.gene_expression_filename}
         else:
             mykwargs = dict()
             
@@ -213,7 +219,10 @@ def main(args):
         logger.info("Train {} with {} samples".format(args.dataset, len(train_loader.dataset)))
 
         # PREPARES MODEL
-        args.img_size = get_img_size(args.dataset)  # stores for metadata
+        #args.img_size = get_img_size(args.dataset)  # stores for metadata
+
+        args.img_size = train_loader.dataset.img_size  # stores for metadata
+        
         model = init_specific_model(args.model_type, args.img_size, args.latent_dim)
         logger.info('Num parameters in model: {}'.format(get_n_param(model)))
 
@@ -244,10 +253,9 @@ def main(args):
         model = load_model(exp_dir, is_gpu=not args.no_cuda)
         metadata = load_metadata(exp_dir)
 
-
-        if args.fold is not None:
-            mykwargs = {'fold': args.fold,
-                        'train_or_test': 'test'}
+        if args.gene_expression_filename is not None:
+            mykwargs = {'gene_expression_filename':
+                        args.gene_expression_filename}
         else:
             mykwargs = dict()
 

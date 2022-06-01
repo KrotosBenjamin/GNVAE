@@ -150,7 +150,6 @@ class Trainer():
         """
         batch_size, channel, height, width = data.size()
         data = data.to(self.device)
-
         try:
             recon_batch, latent_dist, latent_sample = self.model(data)
             loss = self.loss_f(data, recon_batch, latent_dist, self.model.training,
@@ -166,12 +165,12 @@ class Trainer():
         return loss.item()
 
 
-    def _train_iteration_apua(self, data, storer):
-        batch_size, channel, height, width = data.size()
-        data = data.to(self.device)
+    # def _train_iteration_apua(self, data, storer):
+    #     batch_size, channel, height, width = data.size()
+    #     data = data.to(self.device)
         
-        loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
-        return loss.item()
+    #     loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
+    #     return loss.item()
 
 
 class LossesLogger(object):
