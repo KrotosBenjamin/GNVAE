@@ -3,6 +3,7 @@ import logging
 import sys
 import os
 from configparser import ConfigParser
+from inspect import getsourcefile
 
 from torch import optim
 
@@ -16,7 +17,9 @@ from utils.helpers import (create_safe_directory, get_device, set_seed, get_n_pa
 from utils.visualize import GifTraversalsTraining
 
 
-CONFIG_FILE = "hyperparam.ini"
+# Config file is in same directory as the main.py script
+
+CONFIG_FILE = os.path.join(os.path.dirname(getsourcefile(lambda:0)), "hyperparam.ini")
 RES_DIR = "results"
 LOG_LEVELS = list(logging._levelToName.values())
 ADDITIONAL_EXP = ['custom', "debug", "best_celeba", "best_dsprites"]
