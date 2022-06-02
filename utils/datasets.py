@@ -399,7 +399,8 @@ class GeneExpression(DisentangledDataset):
 
         self.gene_expression_filename = gene_expression_filename
 
-        dfx = pd.read_csv(self.gene_expression_filename, index_col=0)
+        dfx = pd.read_csv(self.gene_expression_filename, index_col=0,
+                          sep=None, engine='python')
         self.dfx = dfx
 
         self.img_size = (1, 1, dfx.shape[1])
