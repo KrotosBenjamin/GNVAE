@@ -42,7 +42,7 @@ def main():
 
 
     logging.info("Loading expression data index...")
-    dfz = pd.read_csv(args.gene_expression_filename, index_col=0, usecols=[0])
+    dfz = pd.read_csv(args.gene_expression_filename, sep=None, engine='python', index_col=0, usecols=[0])
     logging.info("... done.")
 
     logging.info("Calculating latent variables...")
