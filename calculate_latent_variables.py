@@ -57,6 +57,7 @@ def main():
     nvar = len(df.columns) // 2
 
     df.columns = [f'mu{x}' for x in range(nvar)] + [f'logvar{x}' for x in range(nvar)]
+    df.index.name = 'gene_id'
     
     logging.info("... done.")
     
