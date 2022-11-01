@@ -2,7 +2,7 @@
 
 GNVAE takes as input a gene expression matrix and outputs a vector of latent variables for each gene.
 
-The latent variable vectors are then used to cluster 
+The latent variable vectors are then used to calculate gene-to-gene distance matrix, gene neighborhood graph and gene modules.
 
 GNVAE is based on [Disentangled VAE](https://github.com/YannDubs/disentangling-vae/) and modified to work with gene expression data.
 
