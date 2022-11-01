@@ -1,3 +1,24 @@
+# GNVAE - Gene Networks with Variational AutoEncoders
+
+GNVAE takes as input a gene expression matrix and outputs a vector of latent variables for each gene.
+
+The latent variable vectors are then used to cluster 
+
+GNVAE is based on [Disentangled VAE](https://github.com/YannDubs/disentangling-vae/) and modified to work with gene expression data.
+
+Usage:
+
+```
+main.py myoutput --experiment factor_geneexpression --model-type Fullyconnected5 --no-test --dataset geneexpression --gene-expression-filename ${GENE_EXPRESSION_FILENAME} --epochs 80 --latent-dim 8
+
+calculate_latent_variables.py --model-filename results/myoutput/model.pt --gene-expression-filename ${GENE_EXPRESSION_FILENAME}  --output-filename latent_variables.tsv
+
+```
+
+GENE_EXPRESSION_FILENAME is a CSV file with genes as rows and samples as columns.
+
+
+
 # Disentangled VAE [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/YannDubs/disentangling-vae/blob/master/LICENSE) [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 This repository contains code (training / metrics / plotting) to investigate disentangling in VAE as well as compare 5 different losses ([summary of the differences](#losses-explanation)) using a [single architecture](#single-model-comparison):
