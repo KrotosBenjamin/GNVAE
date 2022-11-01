@@ -15,7 +15,14 @@ calculate_latent_variables.py --model-filename results/myoutput/model.pt --gene-
 
 ```
 
-GENE_EXPRESSION_FILENAME is a CSV file with genes as rows and samples as columns.
+Input:
+
+GENE_EXPRESSION_FILENAME is a CSV or TSV file with genes as rows and samples as columns.
+
+Output:
+latent_variables.tsv is a TSV file with genes as rows and latent variables as as columns.
+
+
 
 
 
