@@ -1,4 +1,4 @@
-# GNVAE - Gene Networks with Variational AutoEncoders
+# GNVAE - Gene Networks with Variational AutoEncoders [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/apuapaquola/GNVAE/blob/master/LICENSE) [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 GNVAE takes as input a gene expression matrix and outputs a vector of latent variables for each gene.
 
