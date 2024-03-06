@@ -25,7 +25,7 @@ Output:
 
 latent_variables.tsv is a TSV file with genes as rows and latent variables as as columns.
 
-
+genes_to_modules.csv is a CSV file associating each gene ID with the corresponding module ID.
 
 
 
