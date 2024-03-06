@@ -13,6 +13,8 @@ main.py myoutput --experiment factor_geneexpression --model-type Fullyconnected5
 
 calculate_latent_variables.py --model-filename results/myoutput/model.pt --gene-expression-filename ${GENE_EXPRESSION_FILENAME}  --output-filename latent_variables.tsv
 
+latent_variables_to_modules.py latent_variables.csv genes_to_modules.csv
+
 ```
 
 Input:
