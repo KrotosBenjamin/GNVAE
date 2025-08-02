@@ -1,27 +1,32 @@
 #!/usr/bin/env python
 
+import sys
 import argparse
 import logging
-import sys
-import os
-from configparser import ConfigParser
+from os.path import join, dirname
 from inspect import getsourcefile
+from configparser import ConfigParser
 
 from torch import optim
 
-from disvae import init_specific_model, Trainer, Evaluator
-from disvae.utils.modelIO import save_model, load_model, load_metadata
-from disvae.models.losses import LOSSES, RECON_DIST, get_loss_f
 from disvae.models.vae import MODELS
-from utils.datasets import get_dataloaders, get_img_size, DATASETS
-from utils.helpers import (create_safe_directory, get_device, set_seed, get_n_param,
-                           get_config_section, update_namespace_, FormatterNoDuplicate)
 from utils.visualize import GifTraversalsTraining
+from disvae import init_specific_model, Trainer, Evaluator
+from disvae.models.losses import LOSSES, RECON_DIST, get_loss_f
+from utils.datasets import get_dataloaders, get_img_size, DATASETS
+from disvae.utils.modelIO import save_model, load_model, load_metadata
+from utils.helpers import (
+    set_seed,
+    get_device,
+    get_n_param,
+    update_namespace_,
+    get_config_section,
+    FormatterNoDuplicate,
+    create_safe_directory
+)
 
 
-# Config file is in same directory as the main.py script
-
-CONFIG_FILE = os.path.join(os.path.dirname(getsourcefile(lambda:0)), "hyperparam.ini")
+CONFIG_FILE = join(dirname(getsourcefile(lambda:0)), "hyperparam.ini")
 RES_DIR = "results"
 LOG_LEVELS = list(logging._levelToName.values())
 ADDITIONAL_EXP = ['custom', "debug", "best_celeba", "best_dsprites"]
@@ -30,156 +35,135 @@ EXPERIMENTS = ADDITIONAL_EXP + ["{}_{}".format(loss, data)
                                 for data in DATASETS]
 
 
-def parse_arguments(args_to_parse):
+def parse_arguments(cli_args):
     """Parse the command line arguments.
 
     Parameters
     ----------
-    args_to_parse: list of str
+    cli_args: list of str
         Arguments to parse (splitted on whitespaces).
     """
-    default_config = get_config_section([CONFIG_FILE], "Custom")
+    # Temporary parser to extract config file path
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument('--config', '-c', type=str, default=None,
+                            help="Path to the config file (hyperparam.ini).")
+    config_args, _ = pre_parser.parse_known_args(cli_args)
 
-    description = "PyTorch implementation and evaluation of disentangled Variational AutoEncoders and metrics."
+    config_path = config_args.config if config_args.config else join(dirname(__file__), "hyperparam.ini")
+    default_config = get_config_section([config_path], "Custom")
+
+    description = "PyTorch implementation and evaluation of disentangled VAE and metrics."
     parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=FormatterNoDuplicate)
+                                     formatter_class=FormatterNoDuplicate,
+                                     parents=[pre_parser])
 
     # General options
-    general = parser.add_argument_group('General options')
-    general.add_argument('name', type=str,
-                         help="Name of the model for storing and loading purposes.")
-    general.add_argument('-L', '--log-level', help="Logging levels.",
-                         default=default_config['log_level'], choices=LOG_LEVELS)
-    general.add_argument('--no-progress-bar', action='store_true',
-                         default=default_config['no_progress_bar'],
-                         help='Disables progress bar.')
-    general.add_argument('--no-cuda', action='store_true',
-                         default=default_config['no_cuda'],
-                         help='Disables CUDA training, even when have one.')
-    general.add_argument('-s', '--seed', type=int, default=default_config['seed'],
-                         help='Random seed. Can be `None` for stochastic behavior.')
-    general.add_argument('--fold', 
-                         default=None,
-                         help='Fold number for caudate dataset.')
+    parser.add_argument('name', type=str, help="Name for storing/loading the model.")
+    parser.add_argument('-L', '--log-level', default=default_config['log_level'],
+                        choices=LOG_LEVELS)
+    parser.add_argument('--no-progress-bar', action='store_true',
+                        default=default_config['no_progress_bar'],
+                        help='Disables progress bar.')
+    parser.add_argument('--no-cuda', action='store_true',
+                        default=default_config['no_cuda'],
+                        help='Disables use of CUDA.')
+    parser.add_argument('-s', '--seed', type=int, default=default_config['seed'],
+                        help='Random seed. Can be `None` for stochastic behavior.')
+    parser.add_argument('--fold', default=None, help='Fold number for caudate dataset.')
 
-    
-    # Learning options
-    training = parser.add_argument_group('Training specific options')
-    training.add_argument('--checkpoint-every',
-                          type=int, default=default_config['checkpoint_every'],
-                          help='Save a checkpoint of the trained model every n epoch.')
-    training.add_argument('-d', '--dataset', help="Path to training data.",
-                          default=default_config['dataset'], choices=DATASETS)
+    # Training
+    parser.add_argument('--checkpoint-every', type=int,
+                        default=default_config['checkpoint_every'],
+                        help='Save a checkpoint of the trained model every n epoch.')
+    parser.add_argument('-d', '--dataset', default=default_config['dataset'],
+                        choices=DATASETS, help="Path to training data.")
+    parser.add_argument('--gene-expression-filename', default=None,
+                        help="TSV file with gene expression values. Genes are rows, samples are columns.")
+    parser.add_argument('-x', '--experiment', default=default_config['experiment'],
+                        choices=EXPERIMENTS,
+                        help='Predefined experiments to run. If not `custom` this will overwrite some other arguments.')
+    parser.add_argument('-e', '--epochs', type=int, default=default_config['epochs'],
+                        help='Maximum number of epochs to run for.')
+    parser.add_argument('-b', '--batch-size', type=int, default=default_config['batch_size'],
+                        help='Batch size for training.')
+    parser.add_argument('--lr', type=float, default=default_config['lr'],
+                        help='Learning rate.')
 
-    training.add_argument('--gene-expression-filename', help="TSV file with gene expression values. Genes are rows, samples are columns.", default=None)
-    
-    training.add_argument('-x', '--experiment',
-                          default=default_config['experiment'], choices=EXPERIMENTS,
-                          help='Predefined experiments to run. If not `custom` this will overwrite some other arguments.')
-    training.add_argument('-e', '--epochs', type=int,
-                          default=default_config['epochs'],
-                          help='Maximum number of epochs to run for.')
-    training.add_argument('-b', '--batch-size', type=int,
-                          default=default_config['batch_size'],
-                          help='Batch size for training.')
-    training.add_argument('--lr', type=float, default=default_config['lr'],
-                          help='Learning rate.')
+    # Model
+    parser.add_argument('-m', '--model-type', default=default_config['model'],
+                        choices=MODELS, help='Type of encoder and decoder to use.')
+    parser.add_argument('-z', '--latent-dim', type=int, default=default_config['latent_dim'],
+                        help='Dimension of the latent variable.')
+    parser.add_argument('-l', '--loss', default=default_config['loss'],
+                        choices=LOSSES, help="Type of VAE loss function to use.")
+    parser.add_argument('-r', '--rec-dist', default=default_config['rec_dist'],
+                        choices=RECON_DIST, help="Form of the likelihood ot use for each pixel.")
+    parser.add_argument('-a', '--reg-anneal', type=float, default=default_config['reg_anneal'],
+                        help="Number of annealing steps where gradually adding the regularisation.")
 
-    # Model Options
-    model = parser.add_argument_group('Model specfic options')
-    model.add_argument('-m', '--model-type',
-                       default=default_config['model'], choices=MODELS,
-                       help='Type of encoder and decoder to use.')
-    model.add_argument('-z', '--latent-dim', type=int,
-                       default=default_config['latent_dim'],
-                       help='Dimension of the latent variable.')
-    model.add_argument('-l', '--loss',
-                       default=default_config['loss'], choices=LOSSES,
-                       help="Type of VAE loss function to use.")
-    model.add_argument('-r', '--rec-dist', default=default_config['rec_dist'],
-                       choices=RECON_DIST,
-                       help="Form of the likelihood ot use for each pixel.")
-    model.add_argument('-a', '--reg-anneal', type=float,
-                       default=default_config['reg_anneal'],
-                       help="Number of annealing steps where gradually adding the regularisation. What is annealed is specific to each loss.")
-
-    # Loss Specific Options
-    betaH = parser.add_argument_group('BetaH specific parameters')
-    betaH.add_argument('--betaH-B', type=float,
-                       default=default_config['betaH_B'],
-                       help="Weight of the KL (beta in the paper).")
-
-    betaB = parser.add_argument_group('BetaB specific parameters')
-    betaB.add_argument('--betaB-initC', type=float,
-                       default=default_config['betaB_initC'],
-                       help="Starting annealed capacity.")
-    betaB.add_argument('--betaB-finC', type=float,
-                       default=default_config['betaB_finC'],
-                       help="Final annealed capacity.")
-    betaB.add_argument('--betaB-G', type=float,
-                       default=default_config['betaB_G'],
-                       help="Weight of the KL divergence term (gamma in the paper).")
-
-    factor = parser.add_argument_group('factor VAE specific parameters')
-    factor.add_argument('--factor-G', type=float,
-                        default=default_config['factor_G'],
+    # Loss Specific
+    parser.add_argument('--betaH-B', type=float, default=default_config['betaH_B'],
+                        help="Weight of the KL.")
+    parser.add_argument('--betaB-initC', type=float, default=default_config['betaB_initC'],
+                        help="Starting annealed capacity.")
+    parser.add_argument('--betaB-finC', type=float, default=default_config['betaB_finC'],
+                        help="Final annealed capacity.")
+    parser.add_argument('--betaB-G', type=float, default=default_config['betaB_G'],
+                        help="Weight of the KL divergence term (gamma in the paper).")
+    parser.add_argument('--factor-G', type=float, default=default_config['factor_G'],
                         help="Weight of the TC term (gamma in the paper).")
-    factor.add_argument('--lr-disc', type=float,
-                        default=default_config['lr_disc'],
+    parser.add_argument('--lr-disc', type=float, default=default_config['lr_disc'],
                         help='Learning rate of the discriminator.')
-
-    btcvae = parser.add_argument_group('beta-tcvae specific parameters')
-    btcvae.add_argument('--btcvae-A', type=float,
-                        default=default_config['btcvae_A'],
+    parser.add_argument('--btcvae-A', type=float, default=default_config['btcvae_A'],
                         help="Weight of the MI term (alpha in the paper).")
-    btcvae.add_argument('--btcvae-G', type=float,
-                        default=default_config['btcvae_G'],
+    parser.add_argument('--btcvae-G', type=float, default=default_config['btcvae_G'],
                         help="Weight of the dim-wise KL term (gamma in the paper).")
-    btcvae.add_argument('--btcvae-B', type=float,
-                        default=default_config['btcvae_B'],
+    parser.add_argument('--btcvae-B', type=float, default=default_config['btcvae_B'],
                         help="Weight of the TC term (beta in the paper).")
 
-    # Learning options
-    evaluation = parser.add_argument_group('Evaluation specific options')
-    evaluation.add_argument('--is-eval-only', action='store_true',
-                            default=default_config['is_eval_only'],
-                            help='Whether to only evaluate using precomputed model `name`.')
-    evaluation.add_argument('--is-metrics', action='store_true',
-                            default=default_config['is_metrics'],
-                            help="Whether to compute the disentangled metrcics. Currently only possible with `dsprites` as it is the only dataset with known true factors of variations.")
-    evaluation.add_argument('--no-test', action='store_true',
-                            default=default_config['no_test'],
-                            help="Whether not to compute the test losses.`")
-    evaluation.add_argument('--eval-batchsize', type=int,
-                            default=default_config['eval_batchsize'],
-                            help='Batch size for evaluation.')
+    # Evaluation
+    parser.add_argument('--is-eval-only', action='store_true', default=default_config['is_eval_only'],
+                        help='Whether to only evaluate using precomputed model `name`.')
+    parser.add_argument('--is-metrics', action='store_true', default=default_config['is_metrics'],
+                        help="Whether to compute the disentangled metrcics. For `dsprites` only.")
+    parser.add_argument('--no-test', action='store_true', default=default_config['no_test'],
+                        help="Whether not to compute the test losses.`")
+    parser.add_argument('--eval-batchsize', type=int, default=default_config['eval_batchsize'],
+                        help='Batch size for evaluation.')
 
-    args = parser.parse_args(args_to_parse)
+    args = parser.parse_args(cli_args)
+
+    # Handle experiment presets
     if args.experiment != 'custom':
         if args.experiment not in ADDITIONAL_EXP:
-            # update all common sections first
-            model, dataset = args.experiment.split("_")
-            common_data = get_config_section([CONFIG_FILE], "Common_{}".format(dataset))
-            update_namespace_(args, common_data)
-            common_model = get_config_section([CONFIG_FILE], "Common_{}".format(model))
-            update_namespace_(args, common_model)
-
+            model_type, dataset = args.experiment.split("_")
+            update_namespace_(args, get_config_section([config_path], f"Common_{dataset}"))
+            update_namespace_(args, get_config_section([config_path], f"Common_{model_type}"))
         try:
-            experiments_config = get_config_section([CONFIG_FILE], args.experiment)
-            update_namespace_(args, experiments_config)
+            update_namespace_(args, get_config_section([config_path], args.experiment))
         except KeyError as e:
             if args.experiment in ADDITIONAL_EXP:
-                raise e  # only reraise if didn't use common section
+                raise e
 
-    if args.gene_expression_filename is None and args.dataset == 'geneexpression':
-        raise Exception("error: a file name must be specified for gene expression datasets")
+    # Ensure gene expression file for geneexpression dataset
+    if args.dataset == 'geneexpression' and not args.gene_expression_filename:
+        parser.error("A filename must be specified for gene expression datasets.")
 
-    # To make args from command line override args from config file, we set the defaults to be the args read so far,
-    # then we call parse_args again with the new defaults.
     parser.set_defaults(**vars(args))
-    args = parser.parse_args(args_to_parse)
-            
-    return args
+    return parser.parse_args(cli_args)
+
+
+def setup_logging(log_level):
+    log_fmt = '%(asctime)s %(levelname)s - %(funcName)s: %(message)s'
+    formatter = logging.Formatter(log_fmt, "%H:%M:%S")
+    logger = logging.getLogger()
+    # Avoid duplicate log output
+    if not logger.hasHandlers():
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    logger.setLevel(log_level.upper())
+    return logger
 
 
 def main(args):
@@ -190,103 +174,61 @@ def main(args):
     args: argparse.Namespace
         Arguments
     """
-    formatter = logging.Formatter('%(asctime)s %(levelname)s - %(funcName)s: %(message)s',
-                                  "%H:%M:%S")
-    logger = logging.getLogger(__name__)
-    logger.setLevel(args.log_level.upper())
-    stream = logging.StreamHandler()
-    stream.setLevel(args.log_level.upper())
-    stream.setFormatter(formatter)
-    logger.addHandler(stream)
-
+    logger = setup_logging(args.log_level)
     set_seed(args.seed)
     device = get_device(is_gpu=not args.no_cuda)
     exp_dir = os.path.join(RES_DIR, args.name)
-    logger.info("Root directory for saving and loading experiments: {}".format(exp_dir))
+    logger.info(f"Root directory for saving and loading experiments: {exp_dir}")
 
+    # Training
     if not args.is_eval_only:
-
         create_safe_directory(exp_dir, logger=logger)
 
         if args.loss == "factor":
-            logger.info("FactorVae needs 2 batches per iteration. To replicate this behavior while being consistent, we double the batch size and the the number of epochs.")
+            logger.info("FactorVae: doubling batch and epoch count to simulate 2 batches/iteration consistency.")
             args.batch_size *= 2
             args.epochs *= 2
 
-        # PREPARES DATA
+        extra_kwargs = {'gene_expression_filename': args.gene_expression_filename} if args.gene_expression_filename else {}
+        train_loader = get_dataloaders(args.dataset, batch_size=args.batch_size,
+                                       logger=logger, **extra_kwargs)
+        logger.info(f"Train dataset '{args.dataset}' samples: {len(train_loader.dataset)}")
 
-        if args.gene_expression_filename is not None:
-            mykwargs = {'gene_expression_filename':
-                        args.gene_expression_filename}
-        else:
-            mykwargs = dict()
-            
-        train_loader = get_dataloaders(args.dataset,
-                                       batch_size=args.batch_size,
-                                       logger=logger,
-                                       **mykwargs)
-        
-        logger.info("Train {} with {} samples".format(args.dataset, len(train_loader.dataset)))
-
-        # PREPARES MODEL
-        #args.img_size = get_img_size(args.dataset)  # stores for metadata
-
-        args.img_size = train_loader.dataset.img_size  # stores for metadata
-        
+        # Store image size if available
+        args.img_size = getattr(train_loader.dataset, 'img_size', None)
         model = init_specific_model(args.model_type, args.img_size, args.latent_dim)
-        logger.info('Num parameters in model: {}'.format(get_n_param(model)))
+        logger.info(f'Num parameters in model: {get_n_param(model)}')
 
-        # TRAINS
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
-
-        model = model.to(device)  # make sure trainer and viz on same device
-        #gif_visualizer = GifTraversalsTraining(model, args.dataset, exp_dir)
-        gif_visualizer = None
-        loss_f = get_loss_f(args.loss,
-                            n_data=len(train_loader.dataset),
-                            device=device,
-                            **vars(args))
-        trainer = Trainer(model, optimizer, loss_f,
-                          device=device,
-                          logger=logger,
-                          save_dir=exp_dir,
-                          is_progress_bar=not args.no_progress_bar,
-                          gif_visualizer=gif_visualizer)
-        trainer(train_loader,
-                epochs=args.epochs,
-                checkpoint_every=args.checkpoint_every,)
-
-        # SAVE MODEL AND EXPERIMENT INFORMATION
+        model = model.to(device)
+        loss_f = get_loss_f(args.loss, n_data=len(train_loader.dataset),
+                            device=device, **vars(args))
+        # Uncomment to enable viz: gif_visualizer = GifTraversalsTraining(model, args.dataset, exp_dir)
+        trainer = Trainer(
+            model, optimizer, loss_f,
+            device=device, logger=logger, save_dir=exp_dir,
+            is_progress_bar=not args.no_progress_bar, gif_visualizer=None
+        )
+        trainer(train_loader, epochs=args.epochs,
+                checkpoint_every=args.checkpoint_every)
         save_model(trainer.model, exp_dir, metadata=vars(args))
 
+    # Evaluation and/or metrics
     if args.is_metrics or not args.no_test:
         model = load_model(exp_dir, is_gpu=not args.no_cuda)
         metadata = load_metadata(exp_dir)
-
-        if args.gene_expression_filename is not None:
-            mykwargs = {'gene_expression_filename':
-                        args.gene_expression_filename}
-        else:
-            mykwargs = dict()
-
-        
-        # TO-DO: currently uses train datatset
-        test_loader = get_dataloaders(metadata["dataset"],
-                                      batch_size=args.eval_batchsize,
-                                      shuffle=False,
-                                      logger=logger,
-                                      **mykwargs
-                                     )
-        loss_f = get_loss_f(args.loss,
-                            n_data=len(test_loader.dataset),
-                            device=device,
-                            **vars(args))
-        evaluator = Evaluator(model, loss_f,
-                              device=device,
-                              logger=logger,
-                              save_dir=exp_dir,
-                              is_progress_bar=not args.no_progress_bar)
-
+        eval_kwargs = {'gene_expression_filename': args.gene_expression_filename} if args.gene_expression_filename else {}
+        ## TODO: Need to fix load_metadata so that test data used!
+        test_loader = get_dataloaders(
+            metadata["dataset"], batch_size=args.eval_batchsize, shuffle=False,
+            logger=logger, **eval_kwargs
+        )
+        loss_f = get_loss_f(args.loss, n_data=len(test_loader.dataset),
+                            device=device, **vars(args))
+        evaluator = Evaluator(
+            model, loss_f, device=device, logger=logger, save_dir=exp_dir,
+            is_progress_bar=not args.no_progress_bar
+        )
         evaluator(test_loader, is_metrics=args.is_metrics, is_losses=not args.no_test)
 
 

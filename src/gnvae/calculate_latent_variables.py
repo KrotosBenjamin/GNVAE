@@ -1,71 +1,86 @@
 #!/usr/bin/env python
 
+## Original author: Apuã Paquola
+## Modified by: Javier Hernandez and Kynon J.M. Benjamin
+
+import os
 import sys
 import argparse
-import os
 import logging
 
-import pandas as pd
-import numpy as np
 import torch
-from disvae.utils.modelIO import load_model, load_metadata
+import numpy as np
+import pandas as pd
 from utils.datasets import get_dataloaders
+from disvae.utils.modelIO import load_model, load_metadata
 
-__author__ = 'Apuã Paquola'
-
-
-def latent_variables(model, dl):
+def extract_latent_variables(model, dataloader, device):
+    """Yields: np.array with [mu_1 ... mu_n, logvar_1 ... logvar_n] for each batch"""
     model.eval()
-    for data, _ in dl:
-        mu, logvar = model.encoder(data.to("cuda"))
-        yield np.concatenate(
-            (mu.cpu().detach().numpy()[0],
-             logvar.cpu().detach().numpy()[0],))
-             
-        
+    for data, _ in dataloader:
+        data = data.to(device)
+        with torch.no_grad():
+            mu, logvar = model.encoder(data)
+            mu = mu.cpu().numpy().squeeze()
+            logvar = logvar.cpu().numpy().squeeze()
+            # ensure shape is (latent_dim,), regardless of batch dimension
+            result = np.concatenate([mu, logvar])
+            yield result
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-filename', required=True)
-    parser.add_argument('--gene-expression-filename', required=True)
-    parser.add_argument('--output-filename', required=True)
-    args=parser.parse_args()
+    parser.add_argument('--model-filename', required=True,
+                        help="Path to model .pt file.")
+    parser.add_argument('--gene-expression-filename', required=True,
+                        help="Path to gene expression TSV/CSV.")
+    parser.add_argument('--output-filename', default="./output",
+                        help="Output TSV path.")
+    parser.add_argument('--use-cuda', action='store_true',
+                        help="Force use of CUDA if available.")
+    args = parser.parse_args()
 
-    logging.basicConfig(format='%(asctime)s: %(message)s', level=logging.DEBUG)
-    
+    logging.basicConfig(format='%(asctime)s: %(message)s', level=logging.INFO)
+    device = torch.device('cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu')
+    logging.info(f"Using device: {device}")
+
     logging.info("Loading model...")
     model_dir = os.path.dirname(args.model_filename)
-    model_filename = os.path.basename(args.model_filename)
-    model = load_model(model_dir, filename = model_filename)
+    model = load_model(model_dir, filename=os.path.basename(args.model_filename))
+    model = model.to(device)
     metadata = load_metadata(model_dir)
     logging.info("... done.")
 
-
-    logging.info("Loading expression data index...")
-    dfz = pd.read_csv(args.gene_expression_filename, sep=None, engine='python', index_col=0, usecols=[0])
+    logging.info("Reading expression file index...")
+    # read index; flexible parsing for sep
+    df_index = pd.read_csv(args.gene_expression_filename, sep=None,
+                           engine='python', index_col=0, usecols=[0])
     logging.info("... done.")
+
+    logging.info("Preparing dataloader...")
+    dataloader = get_dataloaders(
+        "geneexpression",
+        gene_expression_filename=args.gene_expression_filename,
+        shuffle=False,
+        batch_size=1
+    )
 
     logging.info("Calculating latent variables...")
-    dl = get_dataloaders("geneexpression",
-                         gene_expression_filename=args.gene_expression_filename,
-                         shuffle=False,
-                         batch_size=1)
-    
-    df = pd.DataFrame.from_records((latent_variables(model, dl)), index=dfz.index)
+    latent_records = list(extract_latent_variables(model, dataloader, device))
+    df_latent = pd.DataFrame(latent_records, index=df_index.index)
+    assert df_latent.shape[0] == df_index.shape[0], "Sample count across expression and encoding mismatch."
 
-    assert len(df.columns) % 2 == 0
-    nvar = len(df.columns) // 2
+    n_latent = df_latent.shape[1] // 2
+    df_latent.columns = (
+        [f'mu{i}' for i in range(n_latent)]
+        + [f'logvar{i}' for i in range(n_latent)]
+    )
+    df_latent.index.name = df_index.index.name
 
-    df.columns = [f'mu{x}' for x in range(nvar)] + [f'logvar{x}' for x in range(nvar)]
-    df.index.name = 'gene_id'
-    
-    logging.info("... done.")
-    
     logging.info("Saving latent variables...")
-    df.to_csv(args.output_filename, sep="\t")
-    logging.info("... done.")
-    
-    
+    df_latent.to_csv(args.output_filename, sep="\t")
+    logging.info(f"... done. TSV saved to {args.output_filename}")
+
+
 if __name__ == '__main__':
     main()
-
