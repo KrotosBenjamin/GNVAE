@@ -1,15 +1,31 @@
-[project]
+[tool.poetry]
 name = "gnvae"
 version = "0.1.0"
 description = "Gene Networks wit (GNVAE) -- a computational method to analyze gene expression data and uncover underlying relationships with gene networks."
 authors = [
-    {name = "Apuã Paquola",email = "apua.paquola@libd.org>, Kynon J. M. Benjamin <kj.benjamin90@gmail.com>, Javier Hernandez <JavierHernandez2027@u.northwestern.edu"}
+    "Apuã Paquola <apua.paquola@libd.org>",
+    "Kynon J. M. Benjamin <kj.benjamin90@gmail.com>",
+    "Javier Hernandez <JavierHernandez2027@u.northwestern.edu>"
 ]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/KrotosBenjamin/GNVAE"
 repository = "https://github.com/KrotosBenjamin/GNVAE"
-packages = [{ include = "gnvae", from = "src" }]
+packages = [
+    { include = "gnvae", from = "src" }
+]
+
+[project]
+name = "gnvae"
+version = "0.1.0"
+description = "Gene Networks wit (GNVAE) -- a computational method to analyze gene expression data and uncover underlying relationships with gene networks."
+authors = [
+    { name = "Apuã Paquola", email = "apua.paquola@libd.org" },
+    { name = "Kynon J. M. Benjamin", email = "kj.benjamin90@gmail.com" },
+    { name = "Javier Hernandez", email = "JavierHernandez2027@u.northwestern.edu" }
+]
+license = "MIT"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "numpy (>=2.3.2,<3.0.0)",
@@ -25,14 +41,25 @@ dependencies = [
     "pillow (>=11.3.0,<12.0.0)"
 ]
 
-[tool.poetry.scripts]
+[project.scripts]
 gnvae-train = "gnvae.main:main"
 gnvae-calc = "gnvae.calculate_latent_variables:main"
 #gnvae-modules = "gnvae.latent_variables_to_modules:main"
 
+[tool.poetry.scripts]
+gnvae-train = "gnvae.main:main"
+gnvae-calc = "gnvae.calculate_latent_variables:main"
+
 [tool.poetry.include]
-"hyperparam.ini" = "hyperparam.ini"
+hyperparam.ini = "hyperparam.ini"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0", "setuptools>=61.0.0"]
 build-backend = "poetry.core.masonry.api"
