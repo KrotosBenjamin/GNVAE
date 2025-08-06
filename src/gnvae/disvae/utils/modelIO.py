@@ -1,15 +1,14 @@
-import json
 import os
 import re
-
+import json
 import numpy as np
+
 import torch
 
 from gnvae.disvae import init_specific_model
 
 MODEL_FILENAME = "model.pt"
 META_FILENAME = "specs.json"
-
 
 def save_model(model, directory, metadata=None, filename=MODEL_FILENAME):
     """
