@@ -10,8 +10,11 @@ from torch.nn import functional as F
 from torch import optim
 
 from .discriminator import Discriminator
-from disvae.utils.math import (log_density_gaussian, log_importance_weight_matrix,
-                               matrix_log_density_gaussian)
+from gnvae.disvae.utils.math import (
+    log_density_gaussian,
+    matrix_log_density_gaussian,
+    log_importance_weight_matrix
+)
 
 
 LOSSES = ["VAE", "betaH", "betaB", "factor", "btcvae"]
@@ -304,7 +307,7 @@ class FactorKLoss(BaseLoss):
         self.optimizer_d.zero_grad()
         d_tc_loss.backward()
 
-        
+
         #Update at the end (since pytorch 1.5. complains if update before)
         optimizer.step()
         self.optimizer_d.step()

@@ -11,8 +11,8 @@ import logging
 import torch
 import numpy as np
 import pandas as pd
-from utils.datasets import get_dataloaders
-from disvae.utils.modelIO import load_model, load_metadata
+from gnvae.utils.datasets import get_dataloaders
+from gnvae.disvae.utils.modelIO import load_model, load_metadata
 
 def extract_latent_variables(model, dataloader, device):
     """Yields: np.array with [mu_1 ... mu_n, logvar_1 ... logvar_n] for each batch"""

@@ -9,13 +9,13 @@ from configparser import ConfigParser
 
 from torch import optim
 
-from disvae.models.vae import MODELS
-from utils.visualize import GifTraversalsTraining
-from disvae import init_specific_model, Trainer, Evaluator
-from disvae.models.losses import LOSSES, RECON_DIST, get_loss_f
-from utils.datasets import get_dataloaders, get_img_size, DATASETS
-from disvae.utils.modelIO import save_model, load_model, load_metadata
-from utils.helpers import (
+from gnvae.disvae.models.vae import MODELS
+from gnvae.utils.visualize import GifTraversalsTraining
+from gnvae.disvae import init_specific_model, Trainer, Evaluator
+from gnvae.disvae.models.losses import LOSSES, RECON_DIST, get_loss_f
+from gnvae.utils.datasets import get_dataloaders, get_img_size, DATASETS
+from gnvae.disvae.utils.modelIO import save_model, load_model, load_metadata
+from .utils.helpers import (
     set_seed,
     get_device,
     get_n_param,

@@ -5,7 +5,7 @@ import re
 import numpy as np
 import torch
 
-from disvae import init_specific_model
+from gnvae.disvae import init_specific_model
 
 MODEL_FILENAME = "model.pt"
 META_FILENAME = "specs.json"

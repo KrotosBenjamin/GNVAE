@@ -10,9 +10,9 @@ from tqdm import trange, tqdm
 import numpy as np
 import torch
 
-from disvae.models.losses import get_loss_f
-from disvae.utils.math import log_density_gaussian
-from disvae.utils.modelIO import save_metadata
+from gnvae.disvae.models.losses import get_loss_f
+from gnvae.disvae.utils.math import log_density_gaussian
+from gnvae.disvae.utils.modelIO import save_metadata
 
 TEST_LOSSES_FILE = "test_losses.log"
 METRICS_FILENAME = "metrics.log"

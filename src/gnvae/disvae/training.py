@@ -8,7 +8,7 @@ from tqdm import trange
 import torch
 from torch.nn import functional as F
 
-from disvae.utils.modelIO import save_model
+from gnvae.disvae.utils.modelIO import save_model
 
 
 TRAIN_LOSSES_LOGFILE = "train_losses.log"
@@ -51,7 +51,7 @@ class Trainer():
                  is_progress_bar=True):
 
         torch.autograd.set_detect_anomaly(True)
-        
+
         self.device = device
         self.model = model.to(self.device)
         self.loss_f = loss_f
@@ -168,7 +168,7 @@ class Trainer():
     # def _train_iteration_apua(self, data, storer):
     #     batch_size, channel, height, width = data.size()
     #     data = data.to(self.device)
-        
+
     #     loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
     #     return loss.item()
 

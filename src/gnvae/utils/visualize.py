@@ -10,9 +10,10 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torchvision.utils import make_grid, save_image
 
-from utils.datasets import get_background
-from utils.viz_helpers import (read_loss_from_file, add_labels, make_grid_img,
-                               sort_list_by_other, FPS_GIF, concatenate_pad)
+from gnvae.utils.datasets import get_background
+from gnvae.utils.viz_helpers import (
+    read_loss_from_file, add_labels, make_grid_img,
+    sort_list_by_other, FPS_GIF, concatenate_pad)
 
 TRAIN_FILE = "train_losses.log"
 DECIMAL_POINTS = 3
