@@ -1,21 +1,18 @@
 """
 Module containing the decoders.
 """
-import numpy as np
-
 import torch
+import numpy as np
 from torch import nn
-
 
 # ALL decoders should be called Decoder<Model>
 def get_decoder(model_type):
     model_type = model_type.lower().capitalize()
-    return eval("Decoder{}".format(model_type))
+    return eval(f"Decoder{model_type}")
 
 
 class DecoderBurgess(nn.Module):
-    def __init__(self, img_size,
-                 latent_dim=10):
+    def __init__(self, img_size, latent_dim=10, hidden_dims=None):
         r"""Decoder of the model proposed in [1].
 
         Parameters
@@ -84,190 +81,47 @@ class DecoderBurgess(nn.Module):
         return x
 
 
-class DecoderFullyconnected1(nn.Module):
-    """ Fully connected decoder 1
+class DecoderFullyconnected(nn.Module):
+    """
+    Fully-connected decoder to mirror EncoderFullyconnected.
+
+    Parameters
+    ----------
+    img_size : tuple of ints
+        Output image size (should match input size to encoder).
+    latent_dim : int, default: 128
+        Latent space dimensionality.
+    hidden_dims : list of ints, optional
+        Hidden layer sizes. If None, uses reversed encoder default.
+    """
+    def __init__(self, img_size, latent_dim=128, hidden_dims=None):
+        super(DecoderFullyconnected, self).__init__()
+
+        if hidden_dims is None:
+            hidden_dims = [128, 64, 32] # mirror encoder default
+
         self.latent_dim = latent_dim
         self.img_size = img_size
 
-        Parameters
-        ----------
-        img_size : tuple of ints
-            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
+        hidden_dims_dec = list(hidden_dims)[::-1]
+        output_dim = int(np.product(img_size))
 
-        latent_dim : int
-            Dimensionality of latent output.
+        modules = []
+        all_dims = [latent_dim] + hidden_dims_dec
+        for i in range(len(all_dims) - 1):
+            modules.append(nn.Linear(all_dims[i], all_dims[i+1]))
+            modules.append(nn.ReLU())
+        self.decoder = nn.Sequential(*modules)
 
-        Model Architecture (transposed for decoder)
-        ------------
-        - 3 fully connected layers (each of 256 units)
-        - Latent distribution:
-        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
+        # Final linear to output_dim followed by sigmoid for normalized pixel output
+        self.output_layer = nn.Linear(hidden_dims_dec[-1], output_dim)
+        self.activation = nn.Sigmoid()
 
-     """
-
-    def __init__(self, img_size, latent_dim=10):
-        super(DecoderFullyconnected1, self).__init__()
-        
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        dims = [128, 64, 32]
-        
-        self.lin0 = nn.Linear(latent_dim, dims[2])
-        self.lin1 = nn.Linear(dims[2], dims[1])
-        self.lin2 = nn.Linear(dims[1], dims[0])
-        self.lin3 = nn.Linear(dims[0], np.product(self.img_size))
-        
     def forward(self, z):
-        batch_size = z.size(0)
-
-        # Fully connected layers with ReLu activations
-        x = torch.relu(self.lin0(z))
-        x = torch.relu(self.lin1(x))
-        x = torch.sigmoid(self.lin2(x))
-        x = torch.sigmoid(self.lin3(x))
-        x = x.view(batch_size, *self.img_size)
-
-        return x
-
-    
-
-class DecoderFullyconnected2(nn.Module):
-    """ Fully connected decoder 2
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        Parameters
-        ----------
-        img_size : tuple of ints
-            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
-
-        latent_dim : int
-            Dimensionality of latent output.
-
-        Model Architecture (transposed for decoder)
-        ------------
-        - 3 fully connected layers (each of 256 units)
-        - Latent distribution:
-        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
-
-     """
-
-    def __init__(self, img_size, latent_dim=10):
-        super(DecoderFullyconnected2, self).__init__()
-        
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        dims = [4096, 1024]
-        
-        self.lin0 = nn.Linear(latent_dim, dims[1])
-        self.lin1 = nn.Linear(dims[1], dims[0])
-        self.lin2 = nn.Linear(dims[0], np.product(self.img_size))
-        
-    def forward(self, z):
-        batch_size = z.size(0)
-
-        # Fully connected layers with ReLu activations
-        x = torch.relu(self.lin0(z))
-        x = torch.relu(self.lin1(x))
-        #x = torch.sigmoid(self.lin2(x)) # dropping the sigmoid
-        x = self.lin2(x)
-        x = x.view(batch_size, *self.img_size)
-
-        return x
-
-    
-class DecoderFullyconnected3(nn.Module):
-    """ Fully connected decoder 3
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        Parameters
-        ----------
-        img_size : tuple of ints
-            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
-
-        latent_dim : int
-            Dimensionality of latent output.
-
-        Model Architecture (transposed for decoder)
-        ------------
-        - 3 fully connected layers (each of 256 units)
-        - Latent distribution:
-        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
-
-     """
-
-    def __init__(self, img_size, latent_dim=10):
-        super(DecoderFullyconnected3, self).__init__()
-        
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        dims = [1024, 1024]
-        
-        self.lin0 = nn.Linear(latent_dim, dims[1])
-        self.lin1 = nn.Linear(dims[1], dims[0])
-        self.lin2 = nn.Linear(dims[0], np.product(self.img_size))
-        
-    def forward(self, z):
-        batch_size = z.size(0)
-
-        # Fully connected layers with ReLu activations
-        x = torch.relu(self.lin0(z))
-        x = torch.relu(self.lin1(x))
-        #x = torch.sigmoid(self.lin2(x)) # dropping the sigmoid
-        x = self.lin2(x)
-        x = x.view(batch_size, *self.img_size)
-
-        return x
-
-    
-
-class DecoderFullyconnected4(nn.Module):
-    """ Fully connected decoder 4
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        Parameters
-        ----------
-        img_size : tuple of ints
-            Size of images. E.g. (1, 32, 32) or (3, 64, 64).
-
-        latent_dim : int
-            Dimensionality of latent output.
-
-        Model Architecture (transposed for decoder)
-        ------------
-        - 3 fully connected layers (each of 256 units)
-        - Latent distribution:
-        - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
-
-     """
-
-    def __init__(self, img_size, latent_dim=10):
-        super(DecoderFullyconnected4, self).__init__()
-        
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-
-        dims = [128, 32]
-        
-        self.lin0 = nn.Linear(latent_dim, dims[1])
-        self.lin1 = nn.Linear(dims[1], dims[0])
-        self.lin2 = nn.Linear(dims[0], np.product(self.img_size))
-        
-    def forward(self, z):
-        batch_size = z.size(0)
-
-        # Fully connected layers with ReLu activations
-        x = torch.relu(self.lin0(z))
-        x = torch.relu(self.lin1(x))
-        #x = torch.sigmoid(self.lin2(x)) # dropping the sigmoid
-        x = self.lin2(x)
-        x = x.view(batch_size, *self.img_size)
-
+        x = self.decoder(z)
+        x = self.output_layer(x)
+        x = self.activation(x)
+        x = x.view(z.size(0), *self.img_size)
         return x
 
 
@@ -290,19 +144,18 @@ class DecoderFullyconnected5(nn.Module):
         - Latent distribution:
         - 1 fully connected layer of 20 units (log variance and mean for 10 Gaussians)
 
-     """
-
-    def __init__(self, img_size, latent_dim=10):
+    """
+    def __init__(self, img_size, latent_dim=10, hidden_dims=None):
         super(DecoderFullyconnected5, self).__init__()
-        
+
         self.latent_dim = latent_dim
         self.img_size = img_size
 
         dims = [128]
-        
+
         self.lin0 = nn.Linear(latent_dim, dims[0])
         self.lin1 = nn.Linear(dims[0], np.product(self.img_size))
-        
+
     def forward(self, z):
         batch_size = z.size(0)
 

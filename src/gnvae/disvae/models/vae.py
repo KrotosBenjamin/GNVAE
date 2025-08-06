@@ -5,13 +5,11 @@ import torch
 from torch import nn, optim
 from torch.nn import functional as F
 
-from gnvae.disvae.utils.initialization import weights_init
 from .encoders import get_encoder
 from .decoders import get_decoder
+from gnvae.disvae.utils.initialization import weights_init
 
-MODELS = ["Burgess", "Fullyconnected1", "Fullyconnected2", "Fullyconnected3",
-          "Fullyconnected4", "Fullyconnected5"]
-
+MODELS = ["Burgess", "Fullyconnected", "Fullyconnected5"]
 
 def init_specific_model(model_type, img_size, latent_dim):
     """Return an instance of a VAE with encoder and decoder from `model_type`."""
@@ -28,7 +26,8 @@ def init_specific_model(model_type, img_size, latent_dim):
 
 
 class VAE(nn.Module):
-    def __init__(self, img_size, encoder, decoder, latent_dim):
+    def __init__(self, img_size, encoder, decoder, latent_dim,
+                 hidden_dims=None):
         """
         Class which defines model and forward pass.
 
@@ -39,14 +38,15 @@ class VAE(nn.Module):
         """
         super(VAE, self).__init__()
 
-        self.latent_dim = latent_dim
         self.img_size = img_size
+        self.latent_dim = latent_dim
+        self.hidden_dims = hidden_dims
 
         self.num_features = int(np.prod(self.img_size))
         #self.num_pixels = self.img_size[1] * self.img_size[2]
 
-        self.encoder = encoder(img_size, self.latent_dim)
-        self.decoder = decoder(img_size, self.latent_dim)
+        self.encoder = encoder(img_size, self.latent_dim, self.hidden_dims)
+        self.decoder = decoder(img_size, self.latent_dim, self.hidden_dims)
 
         self.reset_parameters()
 
