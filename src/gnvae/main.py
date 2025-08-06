@@ -197,7 +197,7 @@ def main(args):
     logger = setup_logging(args.log_level)
     set_seed(args.seed)
     device = get_device(is_gpu=not args.no_cuda)
-    exp_dir = os.path.join(RES_DIR, args.name)
+    exp_dir = join(RES_DIR, args.name)
     logger.info(f"Root directory for saving and loading experiments: {exp_dir}")
 
     # Prepare dataset kwargs
