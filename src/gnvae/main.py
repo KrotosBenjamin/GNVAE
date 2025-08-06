@@ -25,15 +25,12 @@ from .utils.helpers import (
     create_safe_directory
 )
 
-
-CONFIG_FILE = join(dirname(getsourcefile(lambda:0)), "hyperparam.ini")
 RES_DIR = "results"
 LOG_LEVELS = list(logging._levelToName.values())
 ADDITIONAL_EXP = ['custom', "debug", "best_celeba", "best_dsprites"]
 EXPERIMENTS = ADDITIONAL_EXP + ["{}_{}".format(loss, data)
                                 for loss in LOSSES
                                 for data in DATASETS]
-
 
 def parse_arguments(cli_args):
     """Parse the command line arguments.
