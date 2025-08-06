@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "gnvae"
+version = "0.1.0"
+description = "Gene Networks wit (GNVAE) -- a computational method to analyze gene expression data and uncover underlying relationships with gene networks."
+authors = [
+    "Apuã Paquola <apua.paquola@libd.org>",
+    "Kynon J. M. Benjamin <kj.benjamin90@gmail.com>",
+    "Javier Hernandez <JavierHernandez2027@u.northwestern.edu>"
+]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/KrotosBenjamin/GNVAE"
+repository = "https://github.com/KrotosBenjamin/GNVAE"
+packages = [
+    { include = "gnvae", from = "src" }
+]
+include = [ "hyperparam.ini" ]
+
+[project]
+name = "gnvae"
+version = "0.1.0"
+description = "Gene Networks wit (GNVAE) -- a computational method to analyze gene expression data and uncover underlying relationships with gene networks."
+authors = [
+    { name = "Apuã Paquola", email = "apua.paquola@libd.org" },
+    { name = "Kynon J. M. Benjamin", email = "kj.benjamin90@gmail.com" },
+    { name = "Javier Hernandez", email = "JavierHernandez2027@u.northwestern.edu" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy (>=2.3.2,<3.0.0)",
+    "torch (>=2.7.1,<3.0.0)",
+    "torchvision (>=0.22.1,<0.23.0)",
+    "pandas (>=2.3.1,<3.0.0)",
+    "matplotlib (>=3.10.5,<4.0.0)",
+    "scikit-learn (>=1.7.1,<2.0.0)",
+    "tqdm (>=4.67.1,<5.0.0)",
+    "argparse (>=1.4.0,<2.0.0)",
+    "imageio (>=2.37.0,<3.0.0)",
+    "scipy (>=1.16.1,<2.0.0)",
+    "pillow (>=11.3.0,<12.0.0)"
+]
+
+[project.scripts]
+gnvae-train = "gnvae.main:main"
+gnvae-calc = "gnvae.calculate_latent_variables:main"
+#gnvae-modules = "gnvae.latent_variables_to_modules:main"
+
+[tool.poetry.scripts]
+gnvae-train = "gnvae.main:main"
+gnvae-calc = "gnvae.calculate_latent_variables:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0", "setuptools>=61.0.0"]
+build-backend = "poetry.core.masonry.api"
