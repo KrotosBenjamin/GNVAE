@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import ast
 import sys
-import argparse
 import logging
+import argparse
+import warnings
 from os.path import join, dirname
 from inspect import getsourcefile
 from configparser import ConfigParser
@@ -147,6 +149,20 @@ def parse_arguments(cli_args):
         except KeyError as e:
             if args.experiment in ADDITIONAL_EXP:
                 raise e
+
+    if hasattr(args, "hidden_dims") and isinstance(args.hidden_dims, str):
+        try:
+            hidden_dims_parsed = ast.literal_eval(args.hidden_dims)
+            if not isinstance(hidden_dims_parsed, (list, tuple)):
+                args.hidden_dims = hidden_dims_parsed
+            else:
+                args.hidden_dims = None
+        except Exception:
+            args.hidden_dims = None
+            warnings.warn(
+                "Warning: failed to parse 'hidden_dims' from config. Setting 'hidden_dims' to None.",
+                UserWarning
+            )
 
     # Ensure valid gene expression input for geneexpression dataset
     if args.dataset == 'geneexpression':
