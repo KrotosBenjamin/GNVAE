@@ -1,23 +1,22 @@
 import os
-import logging
 import math
-from functools import reduce
-from collections import defaultdict
 import json
-from timeit import default_timer
-
-from tqdm import trange, tqdm
+import logging
 import numpy as np
+from functools import reduce
+from tqdm import trange, tqdm
+from timeit import default_timer
+from collections import defaultdict
+
 import torch
 
 from gnvae.disvae.models.losses import get_loss_f
-from gnvae.disvae.utils.math import log_density_gaussian
 from gnvae.disvae.utils.modelIO import save_metadata
+from gnvae.disvae.utils.math import log_density_gaussian
 
 TEST_LOSSES_FILE = "test_losses.log"
 METRICS_FILENAME = "metrics.log"
 METRIC_HELPERS_FILE = "metric_helpers.pth"
-
 
 class Evaluator:
     """
@@ -26,23 +25,17 @@ class Evaluator:
     Parameters
     ----------
     model: disvae.vae.VAE
-
     loss_f: disvae.models.BaseLoss
         Loss function.
-
     device: torch.device, optional
         Device on which to run the code.
-
     logger: logging.Logger, optional
         Logger.
-
     save_dir : str, optional
         Directory for saving logs.
-
     is_progress_bar: bool, optional
         Whether to use a progress bar for training.
     """
-
     def __init__(self, model, loss_f,
                  device=torch.device("cpu"),
                  logger=logging.getLogger(__name__),
