@@ -1,9 +1,7 @@
-
 import math
-
 from tqdm import trange, tqdm
-import torch
 
+import torch
 
 def matrix_log_density_gaussian(x, mu, logvar):
     """Calculates log density of a Gaussian for all combination of bacth pairs of
@@ -38,10 +36,8 @@ def log_density_gaussian(x, mu, logvar):
     ----------
     x: torch.Tensor or np.ndarray or float
         Value at which to compute the density.
-
     mu: torch.Tensor or np.ndarray or float
         Mean.
-
     logvar: torch.Tensor or np.ndarray or float
         Log variance.
     """
@@ -59,9 +55,8 @@ def log_importance_weight_matrix(batch_size, dataset_size):
     ----------
     batch_size: int
         number of training images in the batch
-
     dataset_size: int
-    number of training images in the dataset
+        number of training images in the dataset
     """
     N = dataset_size
     M = batch_size - 1
