@@ -14,6 +14,7 @@ repository = "https://github.com/KrotosBenjamin/GNVAE"
 packages = [
     { include = "gnvae", from = "src" }
 ]
+include = [ "hyperparam.ini" ]
 
 [project]
 name = "gnvae"
@@ -49,9 +50,6 @@ gnvae-calc = "gnvae.calculate_latent_variables:main"
 [tool.poetry.scripts]
 gnvae-train = "gnvae.main:main"
 gnvae-calc = "gnvae.calculate_latent_variables:main"
-
-[tool.poetry.include]
-hyperparam.ini = "hyperparam.ini"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
