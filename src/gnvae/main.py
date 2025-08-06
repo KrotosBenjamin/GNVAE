@@ -75,7 +75,9 @@ def parse_arguments(cli_args):
     parser.add_argument('-d', '--dataset', default=default_config['dataset'],
                         choices=DATASETS, help="Path to training data.")
     parser.add_argument('--gene-expression-filename', default=None,
-                        help="TSV file with gene expression values. Genes are rows, samples are columns.")
+                        help="CSV file with gene expression values. Genes are rows, samples are columns.")
+    parser.add_argument('--gene-expression-dir', default=None,
+                        help="Path to 10-fold generated data with X_train.csv and X_test.csv.")
     parser.add_argument('-x', '--experiment', default=default_config['experiment'],
                         choices=EXPERIMENTS,
                         help='Predefined experiments to run. If not `custom` this will overwrite some other arguments.')
@@ -142,9 +144,10 @@ def parse_arguments(cli_args):
             if args.experiment in ADDITIONAL_EXP:
                 raise e
 
-    # Ensure gene expression file for geneexpression dataset
-    if args.dataset == 'geneexpression' and not args.gene_expression_filename:
-        parser.error("A filename must be specified for gene expression datasets.")
+    # Ensure valid gene expression input for geneexpression dataset
+    if args.dataset == 'geneexpression':
+        if bool(args.gene_expression_filename) == bool(args.gene_expression_dir):
+            parser.error("You must specify exactly one of --gene_expression_filename or --gene_expression_dir for gene expression datasets.")
 
     parser.set_defaults(**vars(args))
     return parser.parse_args(cli_args)
