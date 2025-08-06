@@ -91,8 +91,12 @@ def parse_arguments(cli_args):
     # Model
     parser.add_argument('-m', '--model-type', default=default_config['model'],
                         choices=MODELS, help='Type of encoder and decoder to use.')
-    parser.add_argument('-z', '--latent-dim', type=int, default=default_config['latent_dim'],
+    parser.add_argument('-z', '--latent-dim', type=int,
+                        default=default_config['latent_dim'],
                         help='Dimension of the latent variable.')
+    parser.add_argument('-Z', '--hidden-dims', type=int,
+                        default=default_config['hidden_dims'],
+                        help='Dimensions for the hidden layer(s).')
     parser.add_argument('-l', '--loss', default=default_config['loss'],
                         choices=LOSSES, help="Type of VAE loss function to use.")
     parser.add_argument('-r', '--rec-dist', default=default_config['rec_dist'],
@@ -206,7 +210,8 @@ def main(args):
         logger.info(f"Train dataset '{args.dataset}' samples: {len(train_loader.dataset)}")
 
         args.img_size = getattr(train_loader.dataset, 'img_size', None)
-        model = init_specific_model(args.model_type, args.img_size, args.latent_dim)
+        model = init_specific_model(args.model_type, args.img_size,
+                                    args.latent_dim, args.hidden_dims)
         logger.info(f'Num parameters in model: {get_n_param(model)}')
 
         optimizer = optim.Adam(model.parameters(), lr=args.lr)

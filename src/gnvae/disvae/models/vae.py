@@ -11,7 +11,8 @@ from gnvae.disvae.utils.initialization import weights_init
 
 MODELS = ["Burgess", "Fullyconnected", "Fullyconnected5"]
 
-def init_specific_model(model_type, img_size, latent_dim):
+def init_specific_model(model_type, img_size, latent_dim,
+                        hidden_dims=None):
     """Return an instance of a VAE with encoder and decoder from `model_type`."""
     model_type = model_type.lower().capitalize()
     if model_type not in MODELS:
@@ -20,14 +21,13 @@ def init_specific_model(model_type, img_size, latent_dim):
 
     encoder = get_encoder(model_type)
     decoder = get_decoder(model_type)
-    model = VAE(img_size, encoder, decoder, latent_dim)
+    model = VAE(img_size, encoder, decoder, latent_dim, hidden_dims)
     model.model_type = model_type  # store to help reloading
     return model
 
 
 class VAE(nn.Module):
-    def __init__(self, img_size, encoder, decoder, latent_dim,
-                 hidden_dims=None):
+    def __init__(self, img_size, encoder, decoder, latent_dim, hidden_dims):
         """
         Class which defines model and forward pass.
 
