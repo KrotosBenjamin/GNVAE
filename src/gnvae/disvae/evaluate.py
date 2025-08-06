@@ -48,7 +48,7 @@ class Evaluator:
         self.logger = logger
         self.save_dir = save_dir
         self.is_progress_bar = is_progress_bar
-        self.logger.info("Testing Device: {}".format(self.device))
+        self.logger.info(f"Testing Device: {self.device}")
 
     def __call__(self, data_loader, is_metrics=False, is_losses=True):
         """Compute all test losses.
@@ -71,19 +71,20 @@ class Evaluator:
         if is_metrics:
             self.logger.info('Computing metrics...')
             metrics = self.compute_metrics(data_loader)
-            self.logger.info('Losses: {}'.format(metrics))
+            self.logger.info(f"Losses: {metrics}")
             save_metadata(metrics, self.save_dir, filename=METRICS_FILENAME)
 
         if is_losses:
             self.logger.info('Computing losses...')
             losses = self.compute_losses(data_loader)
-            self.logger.info('Losses: {}'.format(losses))
+            self.logger.info(f"Losses: {losses}")
             save_metadata(losses, self.save_dir, filename=TEST_LOSSES_FILE)
 
         if is_still_training:
             self.model.train()
 
-        self.logger.info('Finished evaluating after {:.1f} min.'.format((default_timer() - start) / 60))
+        compute_time = ((default_timer() - start) / 60)
+        self.logger.info(f"Finished evaluating after {compute_time:.1f} min.")
 
         return metric, losses
 
@@ -120,7 +121,7 @@ class Evaluator:
             lat_sizes = dataloader.dataset.lat_sizes
             lat_names = dataloader.dataset.lat_names
         except AttributeError:
-            raise ValueError("Dataset needs to have known true factors of variations to compute the metric. This does not seem to be the case for {}".format(type(dataloader.__dict__["dataset"]).__name__))
+            raise ValueError(f"Dataset needs to have known true factors of variations to compute the metric. This does not seem to be the case for {type(dataloader.__dict__["dataset"]).__name__)}")
 
         self.logger.info("Computing the empirical distribution q(z|x).")
         samples_zCx, params_zCx = self._compute_q_zCx(dataloader)
@@ -297,7 +298,7 @@ class Evaluator:
         for i_fac_var, (lat_size, lat_name) in enumerate(zip(lat_sizes, lat_names)):
             idcs = [slice(None)] * len(lat_sizes)
             for i in range(lat_size):
-                self.logger.info("Estimating conditional entropies for the {}th value of {}.".format(i, lat_name))
+                self.logger.info(f"Estimating conditional entropies for the {i}th value of {lat_name}.")
                 idcs[i_fac_var] = i
                 # samples from q(z,x|v)
                 samples_zxCv = samples_zCx[idcs].contiguous().view(len_dataset // lat_size,
