@@ -39,12 +39,12 @@ class VAE(nn.Module):
         """
         super(VAE, self).__init__()
 
-        #if list(img_size[1:]) not in [[32, 32], [64, 64], [20, 20], [152, 152]]:
-#            raise RuntimeError("{} sized images not supported. Only (None, 32, 32) and (None, 64, 64) supported. Build your own architecture or reshape images!".format(img_size))
-
         self.latent_dim = latent_dim
         self.img_size = img_size
-        self.num_pixels = self.img_size[1] * self.img_size[2]
+
+        self.num_features = int(np.prod(self.img_size))
+        #self.num_pixels = self.img_size[1] * self.img_size[2]
+
         self.encoder = encoder(img_size, self.latent_dim)
         self.decoder = decoder(img_size, self.latent_dim)
 
@@ -58,25 +58,17 @@ class VAE(nn.Module):
         ----------
         mean : torch.Tensor
             Mean of the normal distribution. Shape (batch_size, latent_dim)
-
         logvar : torch.Tensor
             Diagonal log variance of the normal distribution. Shape (batch_size,
             latent_dim)
         """
-#        if self.training:
-#            std = torch.exp(0.5 * logvar)
-#            eps = torch.randn_like(std)
-#            return mean + std * eps
-#        else:
-#            # Reconstruction mode
-#            return mean
-
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return mean + std * eps
-
-
-
+        if self.training:
+            std = torch.exp(0.5 * logvar)
+            eps = torch.randn_like(std)
+            return mean + std * eps
+        else:
+            # Reconstruction mode
+            return mean
 
     def forward(self, x):
         """
