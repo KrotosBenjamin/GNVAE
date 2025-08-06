@@ -1,13 +1,12 @@
 import os
-import shutil
-import numpy as np
 import ast
-import configparser
-import argparse
+import shutil
 import random
+import argparse
+import numpy as np
+import configparser
 
 import torch
-
 
 def create_safe_directory(directory, logger=None):
     """Create a directory and archive the previous one if already existed."""
