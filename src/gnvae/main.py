@@ -180,6 +180,13 @@ def main(args):
     exp_dir = os.path.join(RES_DIR, args.name)
     logger.info(f"Root directory for saving and loading experiments: {exp_dir}")
 
+    # Prepare dataset kwargs
+    dataset_kwargs = {
+        'gene_expression_filename': args.gene_expression_filename,
+        'gene_expression_dir': args.gene_expression_dir,
+        'fold_id': args.fold if hasattr(args, "fold") else 0
+    }
+
     # Training
     if not args.is_eval_only:
         create_safe_directory(exp_dir, logger=logger)
@@ -189,12 +196,15 @@ def main(args):
             args.batch_size *= 2
             args.epochs *= 2
 
-        extra_kwargs = {'gene_expression_filename': args.gene_expression_filename} if args.gene_expression_filename else {}
-        train_loader = get_dataloaders(args.dataset, batch_size=args.batch_size,
-                                       logger=logger, **extra_kwargs)
+        train_loader = get_dataloaders(
+            args.dataset,
+            batch_size=args.batch_size,
+            logger=logger,
+            train=True,
+            **{k: v for k, v in dataset_kwargs.items() if v is not None}
+        )
         logger.info(f"Train dataset '{args.dataset}' samples: {len(train_loader.dataset)}")
 
-        # Store image size if available
         args.img_size = getattr(train_loader.dataset, 'img_size', None)
         model = init_specific_model(args.model_type, args.img_size, args.latent_dim)
         logger.info(f'Num parameters in model: {get_n_param(model)}')
@@ -217,11 +227,14 @@ def main(args):
     if args.is_metrics or not args.no_test:
         model = load_model(exp_dir, is_gpu=not args.no_cuda)
         metadata = load_metadata(exp_dir)
-        eval_kwargs = {'gene_expression_filename': args.gene_expression_filename} if args.gene_expression_filename else {}
-        ## TODO: Need to fix load_metadata so that test data used!
+
         test_loader = get_dataloaders(
-            metadata["dataset"], batch_size=args.eval_batchsize, shuffle=False,
-            logger=logger, **eval_kwargs
+            metadata["dataset"],
+            batch_size=args.eval_batchsize,
+            shuffle=False,
+            logger=logger,
+            train=False,
+            **{k: v for k, v in dataset_kwargs.items() if v is not None}
         )
         loss_f = get_loss_f(args.loss, n_data=len(test_loader.dataset),
                             device=device, **vars(args))
