@@ -121,7 +121,7 @@ class Evaluator:
             lat_sizes = dataloader.dataset.lat_sizes
             lat_names = dataloader.dataset.lat_names
         except AttributeError:
-            raise ValueError(f"Dataset needs to have known true factors of variations to compute the metric. This does not seem to be the case for {type(dataloader.__dict__["dataset"]).__name__)}")
+            raise ValueError(f"Dataset needs to have known true factors of variations to compute the metric. This does not seem to be the case for {type(dataloader.__dict__["dataset"]).__name__}")
 
         self.logger.info("Computing the empirical distribution q(z|x).")
         samples_zCx, params_zCx = self._compute_q_zCx(dataloader)
