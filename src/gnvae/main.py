@@ -96,9 +96,9 @@ def parse_arguments(cli_args):
     parser.add_argument('-z', '--latent-dim', type=int,
                         default=default_config['latent_dim'],
                         help='Dimension of the latent variable.')
-    parser.add_argument('-Z', '--hidden-dims', type=int,
-                        default=default_config['hidden_dims'],
-                        help='Dimensions for the hidden layer(s).')
+    parser.add_argument('-Z', '--hidden-dims', type=lambda x: ast.literal_eval(x) if isinstance(x, str) else x,
+                        default=ast.literal_eval(default_config['hidden_dims']) if isinstance(default_config['hidden_dims'], str) else default_config['hidden_dims'],
+                        help='Dimensions for the hidden layer(s). Example: [128, 64]')
     parser.add_argument('-l', '--loss', default=default_config['loss'],
                         choices=LOSSES, help="Type of VAE loss function to use.")
     parser.add_argument('-r', '--rec-dist', default=default_config['rec_dist'],
@@ -150,19 +150,19 @@ def parse_arguments(cli_args):
             if args.experiment in ADDITIONAL_EXP:
                 raise e
 
-    if hasattr(args, "hidden_dims") and isinstance(args.hidden_dims, str):
-        try:
-            hidden_dims_parsed = ast.literal_eval(args.hidden_dims)
-            if not isinstance(hidden_dims_parsed, (list, tuple)):
-                args.hidden_dims = hidden_dims_parsed
-            else:
-                args.hidden_dims = None
-        except Exception:
-            args.hidden_dims = None
-            warnings.warn(
-                "Warning: failed to parse 'hidden_dims' from config. Setting 'hidden_dims' to None.",
-                UserWarning
-            )
+    # if hasattr(args, "hidden_dims") and isinstance(args.hidden_dims, str):
+    #     try:
+    #         hidden_dims_parsed = ast.literal_eval(args.hidden_dims)
+    #         if not isinstance(hidden_dims_parsed, (list, tuple)):
+    #             args.hidden_dims = hidden_dims_parsed
+    #         else:
+    #             args.hidden_dims = None
+    #     except Exception:
+    #         args.hidden_dims = None
+    #         warnings.warn(
+    #             "Warning: failed to parse 'hidden_dims' from config. Setting 'hidden_dims' to None.",
+    #             UserWarning
+    #         )
 
     # Ensure valid gene expression input for geneexpression dataset
     if args.dataset == 'geneexpression':
