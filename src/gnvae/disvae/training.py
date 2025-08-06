@@ -1,18 +1,16 @@
+import os
 import imageio
 import logging
-import os
+from tqdm import trange
 from timeit import default_timer
 from collections import defaultdict
 
-from tqdm import trange
 import torch
 from torch.nn import functional as F
 
 from gnvae.disvae.utils.modelIO import save_model
 
-
 TRAIN_LOSSES_LOGFILE = "train_losses.log"
-
 
 class Trainer():
     """
@@ -21,28 +19,20 @@ class Trainer():
     Parameters
     ----------
     model: disvae.vae.VAE
-
     optimizer: torch.optim.Optimizer
-
     loss_f: disvae.models.BaseLoss
         Loss function.
-
     device: torch.device, optional
         Device on which to run the code.
-
     logger: logging.Logger, optional
         Logger.
-
     save_dir : str, optional
         Directory for saving logs.
-
     gif_visualizer : viz.Visualizer, optional
         Gif Visualizer that should return samples at every epochs.
-
     is_progress_bar: bool, optional
         Whether to use a progress bar for training.
     """
-
     def __init__(self, model, optimizer, loss_f,
                  device=torch.device("cpu"),
                  logger=logging.getLogger(__name__),
@@ -59,23 +49,20 @@ class Trainer():
         self.save_dir = save_dir
         self.is_progress_bar = is_progress_bar
         self.logger = logger
-        self.losses_logger = LossesLogger(os.path.join(self.save_dir, TRAIN_LOSSES_LOGFILE))
+        self.losses_logger = LossesLogger(os.path.join(self.save_dir,
+                                                       TRAIN_LOSSES_LOGFILE))
         self.gif_visualizer = gif_visualizer
-        self.logger.info("Training Device: {}".format(self.device))
+        self.logger.info(f"Training Device: {self.device}")
 
-    def __call__(self, data_loader,
-                 epochs=10,
-                 checkpoint_every=10):
+    def __call__(self, data_loader, epochs=10, checkpoint_every=10):
         """
         Trains the model.
 
         Parameters
         ----------
         data_loader: torch.utils.data.DataLoader
-
         epochs: int, optional
             Number of epochs to train the model for.
-
         checkpoint_every: int, optional
             Save a checkpoint of the trained model every n epoch.
         """
@@ -84,8 +71,7 @@ class Trainer():
         for epoch in range(epochs):
             storer = defaultdict(list)
             mean_epoch_loss = self._train_epoch(data_loader, storer, epoch)
-            self.logger.info('Epoch: {} Average loss per image: {:.2f}'.format(epoch + 1,
-                                                                               mean_epoch_loss))
+            self.logger.info(f"Epoch: {epoch + 1} Average loss per image: {mean_epoch_loss:.2f}")
             self.losses_logger.log(epoch, storer)
 
             if self.gif_visualizer is not None:
@@ -93,7 +79,7 @@ class Trainer():
 
             if epoch % checkpoint_every == 0:
                 save_model(self.model, self.save_dir,
-                           filename="model-{}.pt".format(epoch))
+                           filename=f"model-{epoch}.pt")
 
         if self.gif_visualizer is not None:
             self.gif_visualizer.save_reset()
@@ -101,7 +87,7 @@ class Trainer():
         self.model.eval()
 
         delta_time = (default_timer() - start) / 60
-        self.logger.info('Finished training after {:.1f} min.'.format(delta_time))
+        self.logger.info(f"Finished training after {delta_time:.1f} min.")
 
     def _train_epoch(self, data_loader, storer, epoch):
         """
@@ -110,10 +96,8 @@ class Trainer():
         Parameters
         ----------
         data_loader: torch.utils.data.DataLoader
-
         storer: dict
             Dictionary in which to store important variables for vizualisation.
-
         epoch: int
             Epoch number
 
@@ -123,13 +107,12 @@ class Trainer():
             Mean loss per image
         """
         epoch_loss = 0.
-        kwargs = dict(desc="Epoch {}".format(epoch + 1), leave=False,
+        kwargs = dict(desc=f"Epoch {epoch + 1}", leave=False,
                       disable=not self.is_progress_bar)
         with trange(len(data_loader), **kwargs) as t:
             for _, (data, _) in enumerate(data_loader):
                 iter_loss = self._train_iteration(data, storer)
                 epoch_loss += iter_loss
-
                 t.set_postfix(loss=iter_loss)
                 t.update()
 
@@ -144,7 +127,6 @@ class Trainer():
         ----------
         data: torch.Tensor
             A batch of data. Shape : (batch_size, channel, height, width).
-
         storer: dict
             Dictionary in which to store important variables for vizualisation.
         """
@@ -165,19 +147,10 @@ class Trainer():
         return loss.item()
 
 
-    # def _train_iteration_apua(self, data, storer):
-    #     batch_size, channel, height, width = data.size()
-    #     data = data.to(self.device)
-
-    #     loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
-    #     return loss.item()
-
-
 class LossesLogger(object):
     """Class definition for objects to write data to log files in a
     form which is then easy to be plotted.
     """
-
     def __init__(self, file_path_name):
         """ Create a logger to store information for plotting. """
         if os.path.isfile(file_path_name):
