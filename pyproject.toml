@@ -29,6 +29,7 @@ tqdm = "^4.67.1"
 imageio = "^2.37.0"
 scipy = "^1.16.1"
 pillow = "^11.3.0"
+scikit-image = "^0.25.2"
 
 [tool.poetry.scripts]
 gnvae-train = "gnvae.main:main"
