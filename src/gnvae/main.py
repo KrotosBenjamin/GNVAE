@@ -232,6 +232,10 @@ def main(args):
         evaluator(test_loader, is_metrics=args.is_metrics, is_losses=not args.no_test)
 
 
-if __name__ == '__main__':
+def cli():
     args = parse_arguments(sys.argv[1:])
     main(args)
+
+
+if __name__ == '__main__':
+    cli()

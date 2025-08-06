@@ -32,7 +32,7 @@ pillow = "^11.3.0"
 scikit-image = "^0.25.2"
 
 [tool.poetry.scripts]
-gnvae-train = "gnvae.main:main"
+gnvae-train = "gnvae.main:cli"
 gnvae-calc = "gnvae.calculate_latent_variables:main"
 # gnvae-modules = "gnvae.latent_variables_to_modules:main"
 
