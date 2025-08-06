@@ -1,8 +1,9 @@
 """
 Module containing the decoders.
 """
-import torch
 import numpy as np
+
+import torch
 from torch import nn
 
 # ALL decoders should be called Decoder<Model>

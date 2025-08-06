@@ -1,8 +1,9 @@
 """
 Module containing the encoders.
 """
-import torch
 import numpy as np
+
+import torch
 from torch import nn
 
 # ALL encoders should be called Enccoder<Model>
