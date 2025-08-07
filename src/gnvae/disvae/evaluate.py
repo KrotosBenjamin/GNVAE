@@ -99,13 +99,13 @@ class Evaluator:
         for data, _ in tqdm(dataloader, leave=False, disable=not self.is_progress_bar):
             data = data.to(self.device)
 
-            try:
-                recon_batch, latent_dist, latent_sample = self.model(data)
-                _ = self.loss_f(data, recon_batch, latent_dist, self.model.training,
-                                storer, latent_sample=latent_sample)
-            except ValueError:
-                # for losses that use multiple optimizers (e.g. Factor)
+            if hasattr(self.loss_f, "call_optimize"):
                 _ = self.loss_f.call_optimize(data, self.model, None, storer)
+            else:
+                recon_batch, latent_dist, latent_sample = self.model(data)
+                _ = self.loss_f(data, recon_batch, latent_dist,
+                                self.model.training, storer,
+                                latent_sample=latent_sample)
 
         losses = {k: sum(v) / len(dataloader) for k, v in storer.items()}
         return losses
