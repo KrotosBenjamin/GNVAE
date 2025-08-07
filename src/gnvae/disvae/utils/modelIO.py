@@ -30,8 +30,11 @@ def save_model(model, directory, metadata=None, filename=MODEL_FILENAME):
 
     if metadata is None:
         # save the minimum required for loading
-        metadata = dict(img_size=model.img_size, latent_dim=model.latent_dim,
-                        model_type=model.model_type)
+        metadata = dict(img_size=model.img_size,
+                        latent_dim=model.latent_dim,
+                        hidden_dims=model.hidden_dims,
+                        model_type=model.model_type,
+                        n_features=model.num_features)
 
     save_metadata(metadata, directory)
 
@@ -96,10 +99,12 @@ def load_model(directory, is_gpu=True, filename=MODEL_FILENAME):
     metadata = load_metadata(directory)
     img_size = metadata["img_size"]
     latent_dim = metadata["latent_dim"]
+    hidden_dims = metadata["hidden_dims"]
     model_type = metadata["model_type"]
 
     path_to_model = os.path.join(directory, filename)
-    model = _get_model(model_type, img_size, latent_dim, device, path_to_model)
+    model = _get_model(model_type, img_size, latent_dim, hidden_dims,
+                       device, path_to_model)
     return model
 
 
@@ -126,7 +131,8 @@ def load_checkpoints(directory, is_gpu=True):
     return checkpoints
 
 
-def _get_model(model_type, img_size, latent_dim, device, path_to_model):
+def _get_model(model_type, img_size, latent_dim, hidden_dims,
+               device, path_to_model):
     """ Load a single model.
 
     Parameters
@@ -144,7 +150,8 @@ def _get_model(model_type, img_size, latent_dim, device, path_to_model):
     path_to_device : str
         Full path to the saved model on the device.
     """
-    model = init_specific_model(model_type, img_size, latent_dim).to(device)
+    model = init_specific_model(model_type, img_size, latent_dim,
+                                hidden_dims).to(device)
     # works with state_dict to make it independent of the file structure
     model.load_state_dict(torch.load(path_to_model), strict=False)
     model.eval()
