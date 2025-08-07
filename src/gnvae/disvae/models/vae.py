@@ -1,6 +1,8 @@
 """
 Module containing the main VAE class.
 """
+from numpy import np
+
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
