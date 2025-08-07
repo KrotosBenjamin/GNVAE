@@ -221,6 +221,7 @@ def main(args):
             batch_size=args.batch_size,
             logger=logger,
             train=True,
+            drop_last=True,
             **{k: v for k, v in dataset_kwargs.items() if v is not None}
         )
         logger.info(f"Train dataset '{args.dataset}' samples: {len(train_loader.dataset)}")
@@ -255,6 +256,7 @@ def main(args):
             shuffle=False,
             logger=logger,
             train=False,
+            drop_last=True,
             **{k: v for k, v in dataset_kwargs.items() if v is not None}
         )
         loss_f = get_loss_f(args.loss, n_data=len(test_loader.dataset),

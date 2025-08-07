@@ -41,7 +41,8 @@ def get_background(dataset):
 
 
 def get_dataloaders(dataset, root=None, shuffle=True, pin_memory=True,
-                    batch_size=128, logger=logging.getLogger(__name__), **kwargs):
+                    batch_size=128, drop_last=False,
+                    logger=logging.getLogger(__name__), **kwargs):
     """
     A generic data loader.
 
@@ -60,7 +61,8 @@ def get_dataloaders(dataset, root=None, shuffle=True, pin_memory=True,
     return DataLoader(dataset_instance,
                       batch_size=batch_size,
                       shuffle=shuffle,
-                      pin_memory=pin_memory)
+                      pin_memory=pin_memory,
+                      drop_last=drop_last)
 
 
 class DisentangledDataset(Dataset, abc.ABC):
