@@ -23,7 +23,6 @@ def extract_latent_variables(model, dataloader, device):
             mu, logvar = model.encoder(data)
             mu = mu.cpu().numpy().squeeze()
             logvar = logvar.cpu().numpy().squeeze()
-            # ensure shape is (latent_dim,), regardless of batch dimension
             result = np.concatenate([mu, logvar])
             yield result
 
@@ -32,13 +31,22 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-filename', required=True,
                         help="Path to model .pt file.")
-    parser.add_argument('--gene-expression-filename', required=True,
+    parser.add_argument('--gene-expression-filename',
                         help="Path to gene expression TSV/CSV.")
+    parser.add_argument('--gene-expression-dir',
+                        help="Directory with 'X_train.csv' as gene expression data.")
     parser.add_argument('--output-filename', default="./output",
                         help="Output TSV path.")
     parser.add_argument('--use-cuda', action='store_true',
                         help="Force use of CUDA if available.")
     args = parser.parse_args()
+
+    if (args.gene_expression_filename is None) == (args.gene_expression_dir is None):
+        raise ValueError("You must specify exactly one of --gene-expression-filename or --gene-expression-dir")
+
+    gene_expression_path = args.gene_expression_filename
+    if args.gene_expression_dir:
+        gene_expression_path = os.path.join(args.gene_expression_dir, "X_train.csv")
 
     logging.basicConfig(format='%(asctime)s: %(message)s', level=logging.INFO)
     device = torch.device('cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu')
@@ -53,16 +61,21 @@ def main():
 
     logging.info("Reading expression file index...")
     # read index; flexible parsing for sep
-    df_index = pd.read_csv(args.gene_expression_filename, sep=None,
-                           engine='python', index_col=0, usecols=[0])
+    df_index = pd.read_csv(gene_expression_path, sep=None, engine='python',
+                           index_col=0, usecols=[0])
     logging.info("... done.")
 
     logging.info("Preparing dataloader...")
+    dataset_kwargs = {
+        'gene_expression_filename': args.gene_expression_filename,
+        'gene_expression_dir': args.gene_expression_dir,
+        'fold_id': "alldata"
+    }
     dataloader = get_dataloaders(
         "geneexpression",
-        gene_expression_filename=args.gene_expression_filename,
         shuffle=False,
-        batch_size=1
+        batch_size=1,
+        **{k: v for k, v in dataset_kwargs.items() if v is not None}
     )
 
     logging.info("Calculating latent variables...")
