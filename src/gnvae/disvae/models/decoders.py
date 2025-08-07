@@ -50,7 +50,7 @@ class DecoderBurgess(nn.Module):
         # Fully connected layers
         self.lin1 = nn.Linear(latent_dim, hidden_dim)
         self.lin2 = nn.Linear(hidden_dim, hidden_dim)
-        self.lin3 = nn.Linear(hidden_dim, np.product(self.reshape))
+        self.lin3 = nn.Linear(hidden_dim, np.prod(self.reshape))
 
         # Convolutional layers
         cnn_kwargs = dict(stride=2, padding=1)
@@ -105,7 +105,7 @@ class DecoderFullyconnected(nn.Module):
         self.img_size = img_size
 
         hidden_dims_dec = list(hidden_dims)[::-1]
-        output_dim = int(np.product(img_size))
+        output_dim = int(np.prod(img_size))
 
         modules = []
         all_dims = [latent_dim] + hidden_dims_dec
@@ -155,7 +155,7 @@ class DecoderFullyconnected5(nn.Module):
         dims = [128]
 
         self.lin0 = nn.Linear(latent_dim, dims[0])
-        self.lin1 = nn.Linear(dims[0], np.product(self.img_size))
+        self.lin1 = nn.Linear(dims[0], np.prod(self.img_size))
 
     def forward(self, z):
         batch_size = z.size(0)

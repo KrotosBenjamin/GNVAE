@@ -126,16 +126,24 @@ class Trainer():
         Parameters
         ----------
         data: torch.Tensor
-            A batch of data. Shape : (batch_size, channel, height, width).
+            A batch of data. Shape : (batch_size, channel, height, width) or
+            (batch_size, channel, features).
         storer: dict
             Dictionary in which to store important variables for vizualisation.
         """
-        batch_size, channel, height, width = data.size()
+        if data.ndim == 4:
+            batch_size, channel, height, width = data.size()
+        elif data.ndim == 3:
+            batch_size, channel, width = data.size()
+        else:
+            raise ValueError(f"Unexpected data shape: {data.shape}")
+
         data = data.to(self.device)
         try:
             recon_batch, latent_dist, latent_sample = self.model(data)
-            loss = self.loss_f(data, recon_batch, latent_dist, self.model.training,
-                               storer, latent_sample=latent_sample)
+            loss = self.loss_f(data, recon_batch, latent_dist,
+                               self.model.training, storer,
+                               latent_sample=latent_sample)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

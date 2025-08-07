@@ -58,7 +58,7 @@ class EncoderBurgess(nn.Module):
             self.conv_64 = nn.Conv2d(hid_channels, hid_channels, kernel_size, **cnn_kwargs)
 
         # Fully connected layers
-        self.lin1 = nn.Linear(np.product(self.reshape), hidden_dim)
+        self.lin1 = nn.Linear(np.prod(self.reshape), hidden_dim)
         self.lin2 = nn.Linear(hidden_dim, hidden_dim)
 
         # Fully connected layers for mean and variance
@@ -131,7 +131,7 @@ class EncoderFullyconnected(nn.Module):
         self.img_size = img_size
 
         # Calculate the input dimension by flattening the input shape
-        input_dim = int(np.product(img_size))
+        input_dim = int(np.prod(img_size))
 
         # Dynamically build the encoder layers
         modules = []
@@ -190,7 +190,7 @@ class EncoderFullyconnected5(nn.Module):
 
         dims = [128]
 
-        self.lin1 = nn.Linear(np.product(img_size), dims[0])
+        self.lin1 = nn.Linear(np.prod(img_size), dims[0])
         self.mu_logvar_gen = nn.Linear(dims[0], self.latent_dim * 2)
 
     def forward(self, x):
