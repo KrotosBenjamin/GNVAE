@@ -112,7 +112,7 @@ class GeneExpression(DisentangledDataset):
     Each gene is treated as a data point, and samples are the features.
 
     This class can operate in two modes:
-    1. Splitting Mode: If `gene_expression_file` is given, it creates a 10-fold
+    1. Splitting Mode: If `gene_expression_filename` is given, it creates a 10-fold
        cross-validation split of the data reproducibly.
     2. Loading Mode: If `gene_expression_dir` is given, it loads pre-split
        'X_train.csv' or 'X_test.csv' files from that directory.
@@ -121,7 +121,7 @@ class GeneExpression(DisentangledDataset):
     ----------
     root : str, optional
         Root directory for the dataset (largely unused here).
-    gene_expression_file : str, optional
+    gene_expression_filename : str, optional
         Path to the full gene-by-sample CSV file. Used for splitting mode.
     gene_expression_dir : str, optional
         Path to a directory containing 'X_train.csv' and 'X_test.csv'.
@@ -142,14 +142,14 @@ class GeneExpression(DisentangledDataset):
                  random_state=13, **kwargs):
         super().__init__(root, [], **kwargs)
         # Validate that exactly one data source is provided
-        if not (gene_expression_file or gene_expression_dir) or \
-           (gene_expression_file and gene_expression_dir):
-            raise ValueError("Please provide either `gene_expression_file` or `gene_expression_dir`.")
+        if not (gene_expression_filename or gene_expression_dir) or \
+           (gene_expression_filename and gene_expression_dir):
+            raise ValueError("Please provide either `gene_expression_filename` or `gene_expression_dir`.")
 
         # Data Loading and Splitting
-        if gene_expression_file:
-            self.logger.info(f"Loading and splitting data from: {gene_expression_file}")
-            full_df = pd.read_csv(gene_expression_file, index_col=0, sep=None,
+        if gene_expression_filename:
+            self.logger.info(f"Loading and splitting data from: {gene_expression_filename}")
+            full_df = pd.read_csv(gene_expression_filename, index_col=0, sep=None,
                                   engine='python')
             kf = KFold(n_splits=10, shuffle=True, random_state=random_state)
             # Get the train/test indices for the specified fold
