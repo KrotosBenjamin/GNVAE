@@ -411,7 +411,7 @@ def _reconstruction_loss(data: torch.Tensor, recon_data: torch.Tensor,
     loss : torch.Tensor
         Scalar loss tensor.
     """
-    batch_size, n_chan, height, width = recon_data.size()
+    batch_size = recon_data.size(0)
 
     if distribution == "bernoulli":
         loss = F.binary_cross_entropy(recon_data, data, reduction="sum")
