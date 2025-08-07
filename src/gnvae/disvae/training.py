@@ -135,7 +135,7 @@ class Trainer():
         if hasattr(self.loss_f, "call_optimize"):
             loss = self.loss_f.call_optimize(data, self.model,
                                              self.optimizer, storer)
-        try:
+        else:
             recon_batch, latent_dist, latent_sample = self.model(data)
             loss = self.loss_f(data, recon_batch, latent_dist,
                                self.model.training, storer,
@@ -143,10 +143,6 @@ class Trainer():
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-
-        except ValueError:
-            # for losses that use multiple optimizers (e.g. Factor)
-            loss = self.loss_f.call_optimize(data, self.model, self.optimizer, storer)
 
         return loss.item()
 

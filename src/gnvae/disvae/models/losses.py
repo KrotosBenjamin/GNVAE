@@ -413,6 +413,12 @@ def _reconstruction_loss(data: torch.Tensor, recon_data: torch.Tensor,
     """
     batch_size = recon_data.size(0)
 
+    # Normalize shapes to (B, F)
+    if recon_data.dim() == 3 and recon_data.size(1) == 1:
+        recon_data = recon_data.squeeze(1)
+    if data.dim() == 3 and data.size(1) == 1:
+        data = data.squeeze(1)
+
     if distribution == "bernoulli":
         loss = F.binary_cross_entropy(recon_data, data, reduction="sum")
     elif distribution == "gaussian":
