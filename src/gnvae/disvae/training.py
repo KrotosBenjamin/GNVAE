@@ -132,6 +132,9 @@ class Trainer():
         """
         data = data.to(self.device)
 
+        if hasattr(self.loss_f, "call_optimize"):
+            loss = self.loss_f.call_optimize(data, self.model,
+                                             self.optimizer, storer)
         try:
             recon_batch, latent_dist, latent_sample = self.model(data)
             loss = self.loss_f(data, recon_batch, latent_dist,

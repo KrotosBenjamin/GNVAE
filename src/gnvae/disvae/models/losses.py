@@ -259,7 +259,8 @@ class FactorKLoss(BaseLoss):
 
         # Forward pass for first half batch
         recon_batch, latent_dist, latent_sample1 = model(data1)
-        rec_loss = _reconstruction_loss(data1, recon_batch, storer=storer, distribution=self.rec_dist)
+        rec_loss = _reconstruction_loss(data1, recon_batch, storer=storer,
+                                        distribution=self.rec_dist)
         kl_loss = _kl_normal_loss(*latent_dist, storer=storer)
 
         d_z = self.discriminator(latent_sample1)
