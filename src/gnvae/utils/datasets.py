@@ -117,16 +117,17 @@ class GeneExpression(DisentangledDataset):
     1. Splitting Mode: If `gene_expression_filename` is given, it creates a 10-fold
        cross-validation split of the data reproducibly.
     2. Loading Mode: If `gene_expression_dir` is given, it loads pre-split
-       'X_train.csv' or 'X_test.csv' files from that directory.
+       'X_train.[csv|tsv]' or 'X_test.[csv|tsv]' files from that directory.
 
     Parameters
     ----------
     root : str, optional
         Root directory for the dataset (largely unused here).
     gene_expression_filename : str, optional
-        Path to the full gene-by-sample CSV file. Used for splitting mode.
+        Path to the full gene-by-sample CSV/TSV file. Used for splitting mode.
     gene_expression_dir : str, optional
-        Path to a directory containing 'X_train.csv' and 'X_test.csv'.
+        Path to a directory containing 'X_train.csv'/'X_train.tsv' and
+        'X_test.csv'/'X_test.tsv'.
         Used for loading mode.
     fold_id : int, default: 0
         The fold index (0-9) to use when in splitting mode.
@@ -151,8 +152,7 @@ class GeneExpression(DisentangledDataset):
         # Data Loading and Splitting
         if gene_expression_filename:
             self.logger.info(f"Loading and splitting data from: {gene_expression_filename}")
-            full_df = pd.read_csv(gene_expression_filename, index_col=0, sep=None,
-                                  engine='python')
+            full_df = self._load_expression_file(gene_expression_filename)
             kf = KFold(n_splits=10, shuffle=True, random_state=random_state)
             # Get the train/test indices for the specified fold
             all_splits = list(kf.split(full_df))
@@ -168,16 +168,50 @@ class GeneExpression(DisentangledDataset):
 
         else: # gene_expression_dir is provided
             self.logger.info(f"Loading pre-split data from: {gene_expression_dir}")
-            file_to_load = 'X_train.csv' if train else 'X_test.csv'
-            data_path = os.path.join(gene_expression_dir, file_to_load)
-            if not os.path.exists(data_path):
-                raise FileNotFoundError(f"Could not find required file: {data_path}")
-            self.dfx = pd.read_csv(data_path, index_col=0, sep=None,
-                                   engine='python')
+            data_path = self._resolve_split_file(gene_expression_dir, train)
+            self.dfx = self._load_expression_file(data_path)
 
         # Data Conversion to Tensor
         self.img_size = (1, self.dfx.shape[1]) # Features = number of samples
         self.data = torch.from_numpy(self.dfx.values.astype(np.float32))
+
+    def _load_expression_file(self, file_path):
+        """Load a gene expression file supporting both CSV and TSV formats."""
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Could not find required file: {file_path}")
+
+        sep = self._infer_separator(file_path)
+
+        self.logger.info(f"Reading gene expression data from {file_path} with separator: {repr(sep)}")
+        return pd.read_csv(file_path, index_col=0, sep=sep, engine='python')
+
+    def _infer_separator(self, file_path):
+        """Best-effort inference of separator, supporting compressed inputs."""
+        base, ext = os.path.splitext(file_path)
+        ext = ext.lower()
+
+        if ext in {".gz", ".zip", ".bz2", ".xz"}:
+            _, ext = os.path.splitext(base)
+            ext = ext.lower()
+
+        if ext in {".tsv", ".txt"}:
+            return "\t"
+        if ext == ".csv":
+            return ","
+
+        return None
+
+    def _resolve_split_file(self, gene_expression_dir, train=True):
+        """Locate the train/test split file, accepting both CSV and TSV extensions."""
+        base_name = 'X_train' if train else 'X_test'
+        extensions = ['.csv', '.csv.gz', '.tsv', '.tsv.gz']
+        for extension in extensions:
+            candidate = os.path.join(gene_expression_dir, base_name + extension)
+            if os.path.exists(candidate):
+                return candidate
+
+        candidates = ", ".join(os.path.join(gene_expression_dir, base_name + ext) for ext in extensions)
+        raise FileNotFoundError(f"Could not find required file. Looked for: {candidates}")
 
     def __getitem__(self, idx):
         """Return a single gene's expression profile as a tensor."""
