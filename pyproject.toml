@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gnvae"
-version = "0.1.0"
+version = "0.2.0"
 description = "Gene Networks with VAEs (GNVAE) to analyze gene expression data and uncover gene network relationships."
 authors = [
     "Apuã Paquola <apua.paquola@libd.org>",
